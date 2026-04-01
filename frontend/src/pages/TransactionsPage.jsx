@@ -1,41 +1,49 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { fmt, fmtDate } from '../components/ui/helpers';
+import { fmt, fmtDate } from '../components/ui/helpers.jsx';
 
 export default function TransactionsPage({ onAdd }) {
   const { household } = useAuth();
   const [txs, setTxs] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState({ type: '', category_id: '' });
+  const [filter, setFilter] = useState({ type: '' });
   const [deleting, setDeleting] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
 
   const load = () => {
+    setLoading(true);
     const params = { household_id: household?.id, limit: 100 };
     if (filter.type) params.type = filter.type;
-    if (filter.category_id) params.category_id = filter.category_id;
     api.getTransactions(params).then(setTxs).finally(() => setLoading(false));
   };
 
-  useEffect(() => { api.getCategories().then(setCategories); }, []);
   useEffect(() => { load(); }, [filter, household]);
 
   const del = async (id) => {
-    if (!confirm('¿Eliminar esta transacción? El saldo se revertirá.')) return;
     setDeleting(id);
-    await api.deleteTransaction(id);
-    setTxs(t => t.filter(x => x.id !== id));
-    setDeleting(null);
+    try {
+      await api.deleteTransaction(id);
+      setTxs(t => t.filter(x => x.id !== id));
+    } catch (e) {
+      alert('Error eliminando: ' + e.message);
+    } finally {
+      setDeleting(null);
+      setConfirmId(null);
+    }
   };
 
-  // Agrupar por fecha
   const grouped = txs.reduce((acc, t) => {
     const d = t.date.split('T')[0];
     if (!acc[d]) acc[d] = [];
     acc[d].push(t);
     return acc;
   }, {});
+
+  const TYPE_LABELS = {
+    '': 'Todos', income: '↑ Ingresos', expense: '↓ Gastos',
+    transfer: '⇄ Transferencias', debt_payment: '💳 Deudas',
+  };
 
   return (
     <div className="stack">
@@ -49,7 +57,7 @@ export default function TransactionsPage({ onAdd }) {
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-        {['', 'income', 'expense', 'transfer', 'debt_payment'].map(t => (
+        {Object.entries(TYPE_LABELS).map(([t, label]) => (
           <button key={t} onClick={() => setFilter(f => ({ ...f, type: t }))}
             className="btn btn-sm"
             style={{
@@ -58,7 +66,7 @@ export default function TransactionsPage({ onAdd }) {
               color: filter.type === t ? '#fff' : 'var(--text2)',
               border: 'none'
             }}>
-            {t === '' ? 'Todos' : t === 'income' ? '↑ Ingresos' : t === 'expense' ? '↓ Gastos' : t === 'transfer' ? '⇄ Transferencias' : '💳 Deudas'}
+            {label}
           </button>
         ))}
       </div>
@@ -72,22 +80,29 @@ export default function TransactionsPage({ onAdd }) {
       {!loading && txs.length === 0 && (
         <div style={{ textAlign: 'center', padding: 48, color: 'var(--text2)' }}>
           <div style={{ fontSize: '2rem', marginBottom: 8 }}>📭</div>
-          No hay movimientos con ese filtro
+          No hay movimientos
+          <div style={{ marginTop: 16 }}>
+            <button className="btn btn-primary btn-sm" onClick={onAdd}>+ Agregar primero</button>
+          </div>
         </div>
       )}
 
       {Object.entries(grouped).map(([date, items]) => (
         <div key={date}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text3)', fontWeight: 600,
-            padding: '4px 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {fmtDate(date)}
+          <div style={{
+            fontSize: '0.78rem', color: 'var(--text3)', fontWeight: 700,
+            padding: '4px 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em',
+            display: 'flex', justifyContent: 'space-between'
+          }}>
+            <span>{fmtDate(date)}</span>
+            <span style={{ fontWeight: 400 }}>{items.length} mov.</span>
           </div>
           <div className="card" style={{ padding: 6 }}>
             {items.map((t, i) => (
               <div key={t.id}>
                 {i > 0 && <div style={{ height: 1, background: 'var(--border)', margin: '0 6px' }} />}
-                <div className="tx-item" style={{ position: 'relative' }}>
-                  <div className="tx-icon" style={{ background: `${t.category_color || '#6366f1'}22` }}>
+                <div className="tx-item">
+                  <div className="tx-icon" style={{ background: `${t.category_color || '#6366f1'}22`, flexShrink: 0 }}>
                     {t.category_icon || (t.type === 'income' ? '↑' : t.type === 'transfer' ? '⇄' : '↓')}
                   </div>
                   <div className="tx-info">
@@ -95,19 +110,40 @@ export default function TransactionsPage({ onAdd }) {
                     <div className="tx-meta">
                       {t.account_name}
                       {t.category_name && ` · ${t.category_name}`}
+                      {' · '}{fmtDate(t.date)}
                       {t.created_by_name && household && ` · ${t.created_by_name}`}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className={`tx-amount ${t.type === 'income' ? 'amount-income' : t.type === 'transfer' ? 'amount-neutral' : 'amount-expense'}`}>
-                      {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{fmt(t.amount)}
-                    </div>
-                    <button onClick={() => del(t.id)} disabled={deleting === t.id}
-                      style={{ background: 'none', border: 'none', color: 'var(--text3)',
-                        cursor: 'pointer', fontSize: '0.8rem', padding: 4, opacity: 0.6 }}>
-                      {deleting === t.id ? '...' : '✕'}
-                    </button>
+
+                  <div className={`tx-amount ${t.type === 'income' ? 'amount-income' : t.type === 'transfer' ? 'amount-neutral' : 'amount-expense'}`}>
+                    {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{fmt(t.amount)}
                   </div>
+
+                  {/* Botón eliminar con confirmación inline */}
+                  {confirmId === t.id ? (
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      <button onClick={() => del(t.id)} disabled={deleting === t.id}
+                        style={{ background: 'var(--red-dim)', color: 'var(--red)', border: 'none',
+                          borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                          fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font)' }}>
+                        {deleting === t.id ? '...' : 'Sí'}
+                      </button>
+                      <button onClick={() => setConfirmId(null)}
+                        style={{ background: 'var(--bg3)', color: 'var(--text2)', border: 'none',
+                          borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                          fontSize: '0.75rem', fontFamily: 'var(--font)' }}>
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmId(t.id)}
+                      style={{ background: 'none', border: 'none', color: 'var(--text3)',
+                        cursor: 'pointer', fontSize: '1rem', padding: '4px 6px',
+                        borderRadius: 6, flexShrink: 0 }}
+                      title="Eliminar">
+                      🗑
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

@@ -24,8 +24,11 @@ export const ToastContainer = ({ toasts }) => (
 );
 
 // ── Format currency ──
-export const fmt = (n) =>
-  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n || 0);
+export const fmt = (n) => {
+  const num = Number(n) || 0;
+  const formatted = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(Math.abs(num));
+  return `${num < 0 ? '-' : ''}$\u00a0${formatted}`;
+};
 
 // ── Format date ──
 export const fmtDate = (d) =>
