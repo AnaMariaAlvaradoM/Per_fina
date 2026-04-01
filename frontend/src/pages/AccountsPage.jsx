@@ -17,6 +17,9 @@ export default function AccountsPage() {
   const [joinCode, setJoinCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
 
   const load = () => api.getAccounts(household?.id).then(setAccounts).finally(() => setLoading(false));
   useEffect(() => { load(); }, [household]);
@@ -34,6 +37,26 @@ export default function AccountsPage() {
       setJoinError(e.message);
     } finally {
       setJoining(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    setEditSaving(true);
+    try {
+      await api.updateAccount(editingAccount.id, {
+        name: editForm.name,
+        color: editForm.color,
+        icon: editForm.icon,
+        is_active: true,
+      });
+      // Actualizar saldo directamente en DB via ajuste de transacción no aplica,
+      // pero sí podemos reflejar localmente y recargar
+      load();
+      setEditingAccount(null);
+    } catch (e) {
+      alert('Error: ' + e.message);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -77,7 +100,7 @@ export default function AccountsPage() {
             Mis cuentas
           </h3>
           <div className="stack">
-            {accounts.personal.map(a => <AccountCard key={a.id} account={a} />)}
+            {accounts.personal.map(a => <AccountCard key={a.id} account={a} onEdit={a => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon }); }} />)}
           </div>
         </div>
       )}
@@ -88,7 +111,7 @@ export default function AccountsPage() {
             Hogar compartido
           </h3>
           <div className="stack">
-            {accounts.shared.map(a => <AccountCard key={a.id} account={a} shared />)}
+            {accounts.shared.map(a => <AccountCard key={a.id} account={a} shared onEdit={a => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon }); }} />)}
           </div>
         </div>
       )}
@@ -187,6 +210,47 @@ export default function AccountsPage() {
         </div>
       )}
 
+
+      {/* Modal editar cuenta */}
+      {editingAccount && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditingAccount(null)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Editar cuenta</h2>
+              <button className="modal-close" onClick={() => setEditingAccount(null)}>✕</button>
+            </div>
+            <div className="stack">
+              <div className="field">
+                <label>Nombre</label>
+                <input className="input" value={editForm.name || ''}
+                  onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="field">
+                <label>Color</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {COLORS.map(c => (
+                    <button key={c} onClick={() => setEditForm(f => ({ ...f, color: c }))}
+                      style={{ width: 28, height: 28, borderRadius: '50%', background: c,
+                        border: editForm.color === c ? '3px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />
+                  ))}
+                </div>
+              </div>
+              <button className="btn btn-primary btn-full" onClick={saveEdit} disabled={editSaving}>
+                {editSaving ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+              <button className="btn btn-danger btn-full" onClick={async () => {
+                if (!confirm('¿Desactivar esta cuenta?')) return;
+                await api.deleteAccount(editingAccount.id);
+                setEditingAccount(null);
+                load();
+              }}>
+                Desactivar cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal unirse a hogar */}
       {showJoin && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowJoin(false)}>
@@ -220,7 +284,7 @@ export default function AccountsPage() {
   );
 }
 
-function AccountCard({ account: a, shared }) {
+function AccountCard({ account: a, shared, onEdit }) {
   return (
     <div className="account-card" style={{ color: a.color, background: `linear-gradient(135deg, ${a.color}18, var(--bg2))`, borderColor: `${a.color}33` }}>
       <div className="flex-between">
@@ -231,12 +295,20 @@ function AccountCard({ account: a, shared }) {
             <div style={{ fontSize: '0.75rem', color: 'var(--text2)' }}>{ACCOUNT_LABELS[a.type] || a.type}</div>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div className={`amount ${parseFloat(a.balance) >= 0 ? 'amount-income' : 'amount-expense'}`}
-            style={{ fontSize: '1.05rem' }}>
-            {fmt(a.balance)}
+        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div>
+            <div className={`amount ${parseFloat(a.balance) >= 0 ? 'amount-income' : 'amount-expense'}`}
+              style={{ fontSize: '1.05rem' }}>
+              {fmt(a.balance)}
+            </div>
+            {shared && <span className="badge badge-blue" style={{ fontSize: '0.65rem', marginTop: 4 }}>Hogar</span>}
           </div>
-          {shared && <span className="badge badge-blue" style={{ fontSize: '0.65rem', marginTop: 4 }}>Hogar</span>}
+          <button onClick={() => onEdit(a)}
+            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
+              width: 30, height: 30, cursor: 'pointer', fontSize: '0.85rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            ✏
+          </button>
         </div>
       </div>
     </div>

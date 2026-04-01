@@ -1,11 +1,20 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const NAV = [
-  { path: '/',             icon: '⬡',  label: 'Inicio'  },
+const NAV_MOBILE = [
+  { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
+  null, // botón +
+  { path: '/hogar',        icon: '🏠', label: 'Hogar' },
+  { path: '/debts',        icon: '💳', label: 'Deudas' },
+];
+
+const NAV_SIDEBAR = [
+  { path: '/',             icon: '⬡',  label: 'Inicio' },
+  { path: '/transactions', icon: '↕',  label: 'Movimientos' },
+  { path: '/hogar',        icon: '🏠', label: 'Hogar' },
+  { path: '/debts',        icon: '💳', label: 'Deudas' },
   { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
-  { path: '/debts',        icon: '💳', label: 'Deudas'  },
 ];
 
 export default function Layout({ children, onAdd }) {
@@ -13,7 +22,6 @@ export default function Layout({ children, onAdd }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const go = (p) => navigate(p);
   const active = (p) => pathname === p ? 'active' : '';
 
   return (
@@ -24,16 +32,20 @@ export default function Layout({ children, onAdd }) {
           <span>💸</span> FinanzApp
         </div>
 
-        {NAV.map(n => (
-          <button key={n.path} className={`sidebar-link ${active(n.path)}`} onClick={() => go(n.path)}>
+        {NAV_SIDEBAR.map(n => (
+          <button key={n.path} className={`sidebar-link ${active(n.path)}`} onClick={() => navigate(n.path)}>
             <span className="sidebar-icon">{n.icon}</span>
             {n.label}
           </button>
         ))}
 
+        <button className="btn btn-primary" onClick={onAdd} style={{ margin: '12px 8px 0' }}>
+          + Agregar
+        </button>
+
         <div style={{ flex: 1 }} />
 
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 12 }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
           <div style={{ padding: '8px 12px', fontSize: '0.82rem', color: 'var(--text2)', fontWeight: 600 }}>
             {user?.name}
           </div>
@@ -48,23 +60,18 @@ export default function Layout({ children, onAdd }) {
 
       {/* Bottom nav - mobile */}
       <nav className="bottom-nav">
-        {NAV.slice(0, 2).map(n => (
-          <button key={n.path} className={`bottom-nav-item ${active(n.path)}`} onClick={() => go(n.path)}>
-            <span className="nav-icon">{n.icon}</span>
-            {n.label}
-          </button>
-        ))}
-
-        <button className="bottom-nav-item add-btn" onClick={onAdd}>
-          <span className="nav-icon">+</span>
-        </button>
-
-        {NAV.slice(2).map(n => (
-          <button key={n.path} className={`bottom-nav-item ${active(n.path)}`} onClick={() => go(n.path)}>
-            <span className="nav-icon">{n.icon}</span>
-            {n.label}
-          </button>
-        ))}
+        {NAV_MOBILE.map((n, i) =>
+          n === null ? (
+            <button key="add" className="bottom-nav-item add-btn" onClick={onAdd}>
+              <span className="nav-icon">+</span>
+            </button>
+          ) : (
+            <button key={n.path} className={`bottom-nav-item ${active(n.path)}`} onClick={() => navigate(n.path)}>
+              <span className="nav-icon">{n.icon}</span>
+              {n.label}
+            </button>
+          )
+        )}
       </nav>
     </div>
   );

@@ -7,8 +7,8 @@ import Dashboard from './pages/Dashboard';
 import TransactionsPage from './pages/TransactionsPage';
 import AccountsPage from './pages/AccountsPage';
 import DebtsPage from './pages/DebtsPage';
+import HogarPage from './pages/HogarPage';
 import AddTransactionModal from './components/ui/AddTransactionModal';
-// import AiChat from './components/chat/AiChat';
 import { ToastContainer, useToast } from './components/ui/helpers.jsx';
 
 function ProtectedApp() {
@@ -37,11 +37,12 @@ function ProtectedApp() {
     <>
       <Layout onAdd={() => setShowAdd(true)}>
         <Routes>
-          <Route path="/" element={<Dashboard key={refreshKey} onAdd={() => setShowAdd(true)} />} />
+          <Route path="/"             element={<Dashboard      key={refreshKey} onAdd={() => setShowAdd(true)} />} />
           <Route path="/transactions" element={<TransactionsPage key={refreshKey} onAdd={() => setShowAdd(true)} />} />
-          <Route path="/accounts" element={<AccountsPage key={refreshKey} />} />
-          <Route path="/debts" element={<DebtsPage key={refreshKey} onAdd={() => setShowAdd(true)} />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/accounts"     element={<AccountsPage  key={refreshKey} />} />
+          <Route path="/debts"        element={<DebtsPage      key={refreshKey} onAdd={() => setShowAdd(true)} />} />
+          <Route path="/hogar"        element={<HogarPage      key={refreshKey} onAdd={() => setShowAdd(true)} />} />
+          <Route path="*"             element={<Navigate to="/" />} />
         </Routes>
       </Layout>
 
@@ -52,7 +53,6 @@ function ProtectedApp() {
         />
       )}
 
-     
       <ToastContainer toasts={toasts} />
     </>
   );
