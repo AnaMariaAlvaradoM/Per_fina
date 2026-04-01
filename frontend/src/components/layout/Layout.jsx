@@ -1,27 +1,28 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+// Mobile: 5 items con + en el centro
 const NAV_MOBILE = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
-  null, // botón +
-  { path: '/hogar',        icon: '🏠', label: 'Hogar' },
+  null,
+  { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
   { path: '/debts',        icon: '💳', label: 'Deudas' },
 ];
 
+// Sidebar desktop: incluye Hogar
 const NAV_SIDEBAR = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
   { path: '/hogar',        icon: '🏠', label: 'Hogar' },
-  { path: '/debts',        icon: '💳', label: 'Deudas' },
   { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
+  { path: '/debts',        icon: '💳', label: 'Deudas' },
 ];
 
 export default function Layout({ children, onAdd }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-
   const active = (p) => pathname === p ? 'active' : '';
 
   return (
@@ -39,7 +40,7 @@ export default function Layout({ children, onAdd }) {
           </button>
         ))}
 
-        <button className="btn btn-primary" onClick={onAdd} style={{ margin: '12px 8px 0' }}>
+        <button className="btn btn-primary" onClick={onAdd} style={{ margin: '16px 8px 0' }}>
           + Agregar
         </button>
 
@@ -58,7 +59,7 @@ export default function Layout({ children, onAdd }) {
       {/* Main */}
       <main className="main-content">{children}</main>
 
-      {/* Bottom nav - mobile */}
+      {/* Bottom nav - mobile: Inicio | Movimientos | + | Cuentas | Deudas */}
       <nav className="bottom-nav">
         {NAV_MOBILE.map((n, i) =>
           n === null ? (

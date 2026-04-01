@@ -3,7 +3,32 @@ const { pool } = require('../db/pool');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-// GET /api/transactions
+// GET /api/transactions/shared — SOLO transacciones con household_id (compartidas)
+router.get('/shared', auth, async (req, res) => {
+  const { household_id, limit = 100 } = req.query;
+  if (!household_id) return res.status(400).json({ error: 'household_id requerido' });
+  try {
+    const result = await pool.query(
+      `SELECT t.*,
+        c.name as category_name, c.icon as category_icon, c.color as category_color,
+        a.name as account_name,
+        u.name as created_by_name
+       FROM transactions t
+       LEFT JOIN categories c ON c.id = t.category_id
+       LEFT JOIN accounts a ON a.id = t.account_id
+       LEFT JOIN users u ON u.id = t.created_by
+       WHERE t.household_id = $1
+       ORDER BY t.date DESC, t.created_at DESC
+       LIMIT $2`,
+      [household_id, limit]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/transactions — personales + opcionalmente filtradas
 router.get('/', auth, async (req, res) => {
   const { household_id, account_id, category_id, type, from, to, limit = 50, offset = 0 } = req.query;
   try {

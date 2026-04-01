@@ -36,6 +36,7 @@ export const api = {
     const q = new URLSearchParams(params).toString();
     return req('GET', `/transactions${q ? `?${q}` : ''}`);
   },
+  getSharedTransactions: (household_id) => req('GET', `/transactions/shared?household_id=${household_id}`),
   getSummary: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return req('GET', `/transactions/summary${q ? `?${q}` : ''}`);
@@ -52,6 +53,4 @@ export const api = {
   getCategories: () => req('GET', '/categories'),
   createCategory: (body) => req('POST', '/categories', body),
 
-  // AI
-  chat: (body) => req('POST', '/ai/chat', body),
 };

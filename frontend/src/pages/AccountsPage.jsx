@@ -127,30 +127,28 @@ export default function AccountsPage() {
 
       {/* Sección hogar */}
       <div className="card" style={{ borderStyle: 'dashed' }}>
-        {household ? (
-          <>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text2)', marginBottom: 6 }}>
-              🏠 Código de invitación — compártelo con tu pareja
+        <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: 12 }}>🏠 Hogar compartido</div>
+
+        {/* Tu código — siempre visible */}
+        {household && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 6 }}>
+              Tu código — compártelo con tu pareja:
             </div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '1.4rem', fontWeight: 800,
-              color: 'var(--accent)', letterSpacing: '0.2em', marginBottom: 6 }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: '1.5rem', fontWeight: 800,
+              color: 'var(--accent)', letterSpacing: '0.25em', marginBottom: 4 }}>
               {household.invite_code}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text3)' }}>
-              Tu pareja se registra y usa este código en "Unirse a un hogar"
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 6 }}>🏠 Hogar compartido</div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text2)', marginBottom: 12 }}>
-              ¿Tu pareja ya tiene cuenta? Ingresa su código para unirte a su hogar y ver gastos compartidos.
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowJoin(true)}>
-              Unirme a un hogar
-            </button>
-          </>
+          </div>
         )}
+
+        {/* Unirse a otro hogar — siempre visible */}
+        <div style={{ fontSize: '0.82rem', color: 'var(--text2)', marginBottom: 10 }}>
+          ¿Tu pareja ya tiene cuenta? Ingresa su código para ver los gastos compartidos:
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={() => setShowJoin(true)}>
+          Ingresar código del hogar
+        </button>
       </div>
 
       {/* Modal nueva cuenta */}
