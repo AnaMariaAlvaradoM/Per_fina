@@ -93,11 +93,32 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           </div>
 
           {/* Monto */}
-          <div className="field">
+          {/* <div className="field">
             <label>Monto (COP)</label>
             <input className="input" type="number" placeholder="0" value={amount}
               onChange={e => setAmount(e.target.value)} style={{ fontSize: '1.2rem', fontWeight: 700 }} />
-          </div>
+          </div> */}
+          <div className="field">
+  <label>Monto (COP)</label>
+  <div style={{ position: 'relative' }}>
+    <span style={{
+      position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+      fontSize: '1.2rem', fontWeight: 700, color: 'var(--text2)'
+    }}>$</span>
+    <input
+      className="input"
+      type="text"
+      inputMode="numeric"
+      placeholder="0"
+      value={amount ? Number(amount).toLocaleString('es-CO') : ''}
+      onChange={e => {
+        const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+        setAmount(raw);
+      }}
+      style={{ fontSize: '1.2rem', fontWeight: 700, paddingLeft: 28 }}
+    />
+  </div>
+</div>
 
           <div className="grid-2">
             {/* Cuenta */}
