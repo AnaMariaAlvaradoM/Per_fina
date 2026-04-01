@@ -28,8 +28,14 @@ export default function AccountsPage() {
     if (!joinCode.trim()) { setJoinError('Ingresa el código'); return; }
     setJoining(true); setJoinError('');
     try {
-      const data = await api.joinHousehold(joinCode.trim().toUpperCase());
-      setHousehold(data.household);
+      await api.joinHousehold(joinCode.trim().toUpperCase());
+      // Recargar perfil completo para obtener el household actualizado
+      const { households } = await api.me();
+      if (households?.length) {
+        // Tomar el hogar compartido (el que no creó ella, o el último)
+        const shared = households.find(h => h.role === 'member') || households[households.length - 1];
+        setHousehold(shared);
+      }
       setShowJoin(false);
       setJoinCode('');
       load();
@@ -47,10 +53,9 @@ export default function AccountsPage() {
         name: editForm.name,
         color: editForm.color,
         icon: editForm.icon,
+        balance: parseFloat(editForm.balance) || 0,
         is_active: true,
       });
-      // Actualizar saldo directamente en DB via ajuste de transacción no aplica,
-      // pero sí podemos reflejar localmente y recargar
       load();
       setEditingAccount(null);
     } catch (e) {
@@ -100,7 +105,7 @@ export default function AccountsPage() {
             Mis cuentas
           </h3>
           <div className="stack">
-            {accounts.personal.map(a => <AccountCard key={a.id} account={a} onEdit={a => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon }); }} />)}
+            {accounts.personal.map(a => <AccountCard key={a.id} account={a} onEdit={() => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: a.balance }); }} />)}
           </div>
         </div>
       )}
@@ -111,7 +116,7 @@ export default function AccountsPage() {
             Hogar compartido
           </h3>
           <div className="stack">
-            {accounts.shared.map(a => <AccountCard key={a.id} account={a} shared onEdit={a => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon }); }} />)}
+            {accounts.shared.map(a => <AccountCard key={a.id} account={a} shared onEdit={() => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: a.balance }); }} />)}
           </div>
         </div>
       )}
@@ -222,6 +227,15 @@ export default function AccountsPage() {
                 <label>Nombre</label>
                 <input className="input" value={editForm.name || ''}
                   onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="field">
+                <label>Saldo actual (COP)</label>
+                <input className="input" type="number" value={editForm.balance ?? ''}
+                  onChange={e => setEditForm(f => ({ ...f, balance: e.target.value }))}
+                  placeholder="0" />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text3)' }}>
+                  Esto ajusta el saldo directamente, úsalo para corregir valores incorrectos
+                </span>
               </div>
               <div className="field">
                 <label>Color</label>

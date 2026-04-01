@@ -14,7 +14,11 @@ export const AuthProvider = ({ children }) => {
       api.me()
         .then(({ user, households }) => {
           setUser(user);
-          if (households?.length) setHousehold(households[0]);
+          if (households?.length) {
+            // Preferir hogar donde es miembro (compartido) sobre el propio
+            const shared = households.find(h => h.role === 'member');
+            setHousehold(shared || households[0]);
+          }
         })
         .catch(() => localStorage.removeItem('token'))
         .finally(() => setLoading(false));

@@ -13,7 +13,7 @@ export default function TransactionsPage({ onAdd }) {
 
   const load = () => {
     setLoading(true);
-    const params = { household_id: household?.id, limit: 100 };
+    const params = { limit: 100 };
     if (filter.type) params.type = filter.type;
     api.getTransactions(params).then(setTxs).finally(() => setLoading(false));
   };

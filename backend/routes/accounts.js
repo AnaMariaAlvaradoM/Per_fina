@@ -58,14 +58,14 @@ router.post('/', auth, async (req, res) => {
 
 // PUT /api/accounts/:id
 router.put('/:id', auth, async (req, res) => {
-  const { name, color, icon, is_active } = req.body;
+  const { name, color, icon, is_active, balance } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE accounts SET name=$1, color=$2, icon=$3, is_active=$4
-       WHERE id=$5 AND (owner_id=$6 OR household_id IN (
-         SELECT household_id FROM household_members WHERE user_id=$6
+      `UPDATE accounts SET name=$1, color=$2, icon=$3, is_active=$4, balance=$5
+       WHERE id=$6 AND (owner_id=$7 OR household_id IN (
+         SELECT household_id FROM household_members WHERE user_id=$7
        )) RETURNING *`,
-      [name, color, icon, is_active, req.params.id, req.user.id]
+      [name, color, icon, is_active, balance ?? 0, req.params.id, req.user.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Cuenta no encontrada' });
     res.json(result.rows[0]);
