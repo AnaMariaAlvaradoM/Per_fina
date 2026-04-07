@@ -1,50 +1,22 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { useAuth } from '../context/AuthContext';
 import { fmt, ACCOUNT_ICONS, ACCOUNT_LABELS } from '../components/ui/helpers.jsx';
 
 const COLORS = ['#6366f1','#10b981','#f59e0b','#f43f5e','#3b82f6','#8b5cf6','#06b6d4','#ec4899'];
 
 export default function AccountsPage() {
-  const { household, setHousehold } = useAuth();
   const [accounts, setAccounts] = useState({ personal: [], shared: [] });
   const [showForm, setShowForm] = useState(false);
-  const [showJoin, setShowJoin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ name: '', type: 'checking', balance: '', color: COLORS[0], icon: '🏦', is_shared: false });
+  const [form, setForm] = useState({ name: '', type: 'checking', balance: '', color: COLORS[0], icon: '🏦' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [joinCode, setJoinCode] = useState('');
-  const [joining, setJoining] = useState(false);
-  const [joinError, setJoinError] = useState('');
   const [editingAccount, setEditingAccount] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [editSaving, setEditSaving] = useState(false);
 
-  const load = () => api.getAccounts(household?.id).then(setAccounts).finally(() => setLoading(false));
-  useEffect(() => { load(); }, [household]);
-
-  const joinHousehold = async () => {
-    if (!joinCode.trim()) { setJoinError('Ingresa el código'); return; }
-    setJoining(true); setJoinError('');
-    try {
-      await api.joinHousehold(joinCode.trim().toUpperCase());
-      // Recargar perfil completo para obtener el household actualizado
-      const { households } = await api.me();
-      if (households?.length) {
-        // Tomar el hogar compartido (el que no creó ella, o el último)
-        const shared = households.find(h => h.role === 'member') || households[households.length - 1];
-        setHousehold(shared);
-      }
-      setShowJoin(false);
-      setJoinCode('');
-      load();
-    } catch (e) {
-      setJoinError(e.message);
-    } finally {
-      setJoining(false);
-    }
-  };
+  const load = () => api.getAccounts().then(setAccounts).finally(() => setLoading(false));
+  useEffect(() => { load(); }, []);
 
   const saveEdit = async () => {
     setEditSaving(true);
@@ -72,10 +44,9 @@ export default function AccountsPage() {
       await api.createAccount({
         ...form,
         balance: parseFloat(form.balance) || 0,
-        household_id: household?.id
       });
       setShowForm(false);
-      setForm({ name: '', type: 'checking', balance: '', color: COLORS[0], icon: '🏦', is_shared: false });
+      setForm({ name: '', type: 'checking', balance: '', color: COLORS[0], icon: '🏦' });
       load();
     } catch (e) {
       setError(e.message);
@@ -99,25 +70,18 @@ export default function AccountsPage() {
 
       {loading && <div className="skeleton" style={{ height: 120 }} />}
 
-      {accounts.personal?.length > 0 && (
-        <div>
-          <h3 style={{ marginBottom: 10, color: 'var(--text2)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Mis cuentas
-          </h3>
-          <div className="stack">
-            {accounts.personal.map(a => <AccountCard key={a.id} account={a} onEdit={() => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: a.balance }); }} />)}
-          </div>
-        </div>
-      )}
-
-      {accounts.shared?.length > 0 && (
-        <div>
-          <h3 style={{ marginBottom: 10, color: 'var(--text2)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Hogar compartido
-          </h3>
-          <div className="stack">
-            {accounts.shared.map(a => <AccountCard key={a.id} account={a} shared onEdit={() => { setEditingAccount(a); setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: a.balance }); }} />)}
-          </div>
+      {allAccounts.length > 0 && (
+        <div className="stack">
+          {allAccounts.map(a => (
+            <AccountCard
+              key={a.id}
+              account={a}
+              onEdit={() => {
+                setEditingAccount(a);
+                setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: a.balance });
+              }}
+            />
+          ))}
         </div>
       )}
 
@@ -129,32 +93,6 @@ export default function AccountsPage() {
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ Agregar cuenta</button>
         </div>
       )}
-
-      {/* Sección hogar */}
-      <div className="card" style={{ borderStyle: 'dashed' }}>
-        <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: 12 }}>🏠 Hogar compartido</div>
-
-        {/* Tu código — siempre visible */}
-        {household && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text2)', marginBottom: 6 }}>
-              Tu código — compártelo con tu pareja:
-            </div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '1.5rem', fontWeight: 800,
-              color: 'var(--accent)', letterSpacing: '0.25em', marginBottom: 4 }}>
-              {household.invite_code}
-            </div>
-          </div>
-        )}
-
-        {/* Unirse a otro hogar — siempre visible */}
-        <div style={{ fontSize: '0.82rem', color: 'var(--text2)', marginBottom: 10 }}>
-          ¿Tu pareja ya tiene cuenta? Ingresa su código para ver los gastos compartidos:
-        </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowJoin(true)}>
-          Ingresar código del hogar
-        </button>
-      </div>
 
       {/* Modal nueva cuenta */}
       {showForm && (
@@ -198,12 +136,6 @@ export default function AccountsPage() {
                   ))}
                 </div>
               </div>
-              {household && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text2)' }}>
-                  <input type="checkbox" checked={form.is_shared} onChange={e => setForm(f => ({ ...f, is_shared: e.target.checked }))} />
-                  Cuenta compartida del hogar
-                </label>
-              )}
               {error && <div className="field-error">⚠ {error}</div>}
               <button className="btn btn-primary btn-full" onClick={save} disabled={saving}>
                 {saving ? 'Guardando...' : 'Crear cuenta'}
@@ -212,7 +144,6 @@ export default function AccountsPage() {
           </div>
         </div>
       )}
-
 
       {/* Modal editar cuenta */}
       {editingAccount && (
@@ -234,7 +165,7 @@ export default function AccountsPage() {
                   onChange={e => setEditForm(f => ({ ...f, balance: e.target.value }))}
                   placeholder="0" />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text3)' }}>
-                  Esto ajusta el saldo directamente, úsalo para corregir valores incorrectos
+                  Ajusta el saldo directamente para corregir valores incorrectos
                 </span>
               </div>
               <div className="field">
@@ -262,41 +193,11 @@ export default function AccountsPage() {
           </div>
         </div>
       )}
-
-      {/* Modal unirse a hogar */}
-      {showJoin && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowJoin(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <h2>Unirme a un hogar</h2>
-              <button className="modal-close" onClick={() => setShowJoin(false)}>✕</button>
-            </div>
-            <div className="stack">
-              <div style={{ fontSize: '0.85rem', color: 'var(--text2)' }}>
-                Pídele a tu pareja el código de invitación que aparece en su pantalla de Cuentas.
-              </div>
-              <div className="field">
-                <label>Código de invitación</label>
-                <input className="input" placeholder="Ej: AB12CD"
-                  value={joinCode}
-                  onChange={e => setJoinCode(e.target.value.toUpperCase())}
-                  style={{ fontFamily: 'var(--mono)', fontSize: '1.2rem', letterSpacing: '0.15em', textAlign: 'center' }}
-                  maxLength={6}
-                />
-              </div>
-              {joinError && <div className="field-error">⚠ {joinError}</div>}
-              <button className="btn btn-primary btn-full" onClick={joinHousehold} disabled={joining}>
-                {joining ? 'Uniéndome...' : 'Unirme al hogar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function AccountCard({ account: a, shared, onEdit }) {
+function AccountCard({ account: a, onEdit }) {
   return (
     <div className="account-card" style={{ color: a.color, background: `linear-gradient(135deg, ${a.color}18, var(--bg2))`, borderColor: `${a.color}33` }}>
       <div className="flex-between">
@@ -313,7 +214,6 @@ function AccountCard({ account: a, shared, onEdit }) {
               style={{ fontSize: '1.05rem' }}>
               {fmt(a.balance)}
             </div>
-            {shared && <span className="badge badge-blue" style={{ fontSize: '0.65rem', marginTop: 4 }}>Hogar</span>}
           </div>
           <button onClick={() => onEdit(a)}
             style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,

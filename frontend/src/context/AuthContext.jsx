@@ -5,21 +5,13 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [household, setHousehold] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       api.me()
-        .then(({ user, households }) => {
-          setUser(user);
-          if (households?.length) {
-            // Preferir hogar donde es miembro (compartido) sobre el propio
-            const shared = households.find(h => h.role === 'member');
-            setHousehold(shared || households[0]);
-          }
-        })
+        .then(({ user }) => setUser(user))
         .catch(() => localStorage.removeItem('token'))
         .finally(() => setLoading(false));
     } else {
@@ -31,7 +23,6 @@ export const AuthProvider = ({ children }) => {
     const data = await api.login({ email, password });
     localStorage.setItem('token', data.token);
     setUser(data.user);
-    setHousehold(data.household);
     return data;
   };
 
@@ -45,11 +36,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    setHousehold(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, household, setHousehold, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

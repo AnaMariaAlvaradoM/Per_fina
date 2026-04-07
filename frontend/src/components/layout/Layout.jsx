@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-// Mobile: 5 items con + en el centro
 const NAV_MOBILE = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
@@ -10,11 +9,9 @@ const NAV_MOBILE = [
   { path: '/debts',        icon: '💳', label: 'Deudas' },
 ];
 
-// Sidebar desktop: incluye Hogar
 const NAV_SIDEBAR = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
-  { path: '/hogar',        icon: '🏠', label: 'Hogar' },
   { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
   { path: '/debts',        icon: '💳', label: 'Deudas' },
 ];
@@ -59,7 +56,7 @@ export default function Layout({ children, onAdd }) {
       {/* Main */}
       <main className="main-content">{children}</main>
 
-      {/* Bottom nav - mobile: Inicio | Movimientos | + | Cuentas | Deudas */}
+      {/* Bottom nav - mobile */}
       <nav className="bottom-nav">
         {NAV_MOBILE.map((n, i) =>
           n === null ? (

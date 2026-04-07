@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 import { fmt, fmtDate, fmtRelative } from './helpers.jsx';
 
 const TYPES = [
@@ -11,7 +10,6 @@ const TYPES = [
 ];
 
 export default function AddTransactionModal({ onClose, onSaved }) {
-  const { household } = useAuth();
   const [type, setType] = useState('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -20,7 +18,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
   const [toAccountId, setToAccountId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [debtId, setDebtId] = useState('');
-  const [isShared, setIsShared] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [debts, setDebts] = useState([]);
@@ -29,9 +26,9 @@ export default function AddTransactionModal({ onClose, onSaved }) {
 
   useEffect(() => {
     Promise.all([
-      api.getAccounts(household?.id),
+      api.getAccounts(),
       api.getCategories(),
-      api.getDebts(household?.id)
+      api.getDebts()
     ]).then(([accs, cats, dbs]) => {
       const all = [...(accs.personal || []), ...(accs.shared || [])];
       setAccounts(all);
@@ -39,7 +36,7 @@ export default function AddTransactionModal({ onClose, onSaved }) {
       setCategories(cats);
       setDebts(dbs.filter(d => d.direction === 'owe' && d.is_active));
     });
-  }, [household]);
+  }, []);
 
   const filteredCats = categories.filter(c =>
     type === 'income' ? c.type !== 'expense' : c.type !== 'income'
@@ -62,7 +59,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
         category_id: categoryId ? parseInt(categoryId) : null,
         debt_id: type === 'debt_payment' && debtId ? parseInt(debtId) : null,
         transfer_to_account_id: type === 'transfer' && toAccountId ? parseInt(toAccountId) : null,
-        household_id: isShared && household?.id ? household.id : null,
       });
       onSaved?.();
       onClose();
@@ -93,32 +89,27 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           </div>
 
           {/* Monto */}
-          {/* <div className="field">
-            <label>Monto (COP)</label>
-            <input className="input" type="number" placeholder="0" value={amount}
-              onChange={e => setAmount(e.target.value)} style={{ fontSize: '1.2rem', fontWeight: 700 }} />
-          </div> */}
           <div className="field">
-  <label>Monto (COP)</label>
-  <div style={{ position: 'relative' }}>
-    <span style={{
-      position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-      fontSize: '1.2rem', fontWeight: 700, color: 'var(--text2)'
-    }}>$</span>
-    <input
-      className="input"
-      type="text"
-      inputMode="numeric"
-      placeholder="0"
-      value={amount ? Number(amount).toLocaleString('es-CO') : ''}
-      onChange={e => {
-        const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
-        setAmount(raw);
-      }}
-      style={{ fontSize: '1.2rem', fontWeight: 700, paddingLeft: 28 }}
-    />
-  </div>
-</div>
+            <label>Monto (COP)</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                fontSize: '1.2rem', fontWeight: 700, color: 'var(--text2)'
+              }}>$</span>
+              <input
+                className="input"
+                type="text"
+                inputMode="numeric"
+                placeholder="0"
+                value={amount ? Number(amount).toLocaleString('es-CO') : ''}
+                onChange={e => {
+                  const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                  setAmount(raw);
+                }}
+                style={{ fontSize: '1.2rem', fontWeight: 700, paddingLeft: 28 }}
+              />
+            </div>
+          </div>
 
           <div className="grid-2">
             {/* Cuenta */}
@@ -177,15 +168,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             <input className="input" placeholder="¿En qué fue?" value={description}
               onChange={e => setDescription(e.target.value)} />
           </div>
-
-          {/* Compartir */}
-          {household && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-              fontSize: '0.85rem', color: 'var(--text2)' }}>
-              <input type="checkbox" checked={isShared} onChange={e => setIsShared(e.target.checked)} />
-              Gasto compartido del hogar
-            </label>
-          )}
 
           {error && <div className="field-error">⚠ {error}</div>}
 
