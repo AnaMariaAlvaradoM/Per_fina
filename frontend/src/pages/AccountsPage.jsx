@@ -215,10 +215,18 @@ function AccountCard({ account: a, onEdit }) {
               {fmt(a.balance)}
             </div>
           </div>
-          <button onClick={() => onEdit(a)}
-            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
-              width: 30, height: 30, cursor: 'pointer', fontSize: '0.85rem',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onEdit(a);
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8,
+              width: 44, height: 44, cursor: 'pointer', fontSize: '1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation'
+            }}>
             ✏
           </button>
         </div>
