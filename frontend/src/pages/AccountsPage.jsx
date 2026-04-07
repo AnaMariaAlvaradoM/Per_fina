@@ -161,9 +161,26 @@ export default function AccountsPage() {
               </div>
               <div className="field">
                 <label>Saldo actual (COP)</label>
-                <input className="input" type="number" value={editForm.balance ?? ''}
-                  onChange={e => setEditForm(f => ({ ...f, balance: e.target.value }))}
-                  placeholder="0" />
+                <div style={{ position: 'relative' }}>
+                  <span style={{
+                    position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                    fontSize: '1rem', fontWeight: 700, color: 'var(--text2)'
+                  }}>$</span>
+                  <input
+                    className="input"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={editForm.balance !== '' && editForm.balance != null
+                      ? Number(String(editForm.balance).replace(/\./g, '').replace(/[^0-9]/g, '') || 0).toLocaleString('es-CO')
+                      : ''}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                      setEditForm(f => ({ ...f, balance: raw }));
+                    }}
+                    style={{ paddingLeft: 28 }}
+                  />
+                </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text3)' }}>
                   Ajusta el saldo directamente para corregir valores incorrectos
                 </span>
