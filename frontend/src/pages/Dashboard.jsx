@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { fmt, fmtRelative } from '../components/ui/helpers.jsx';
@@ -9,29 +8,27 @@ const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov
 const COLORS = ['#6366f1','#f43f5e','#f59e0b','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ec4899'];
 
 export default function Dashboard({ onAdd }) {
-  const { user, household } = useAuth();
-  const navigate = useNavigate();
-  const [summary, setSummary] = useState(null);
-  const [accounts, setAccounts] = useState({ personal: [], shared: [] });
-  const [debts, setDebts] = useState([]);
-  const [recent, setRecent] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [summary, setSummary]   = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [debts, setDebts]       = useState([]);
+  const [recent, setRecent]     = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     const now = new Date();
     Promise.all([
-      // Solo mis movimientos personales para el dashboard personal
       api.getSummary({ year: now.getFullYear(), month: now.getMonth() + 1 }),
-      api.getAccounts(household?.id),
-      api.getDebts(household?.id),
+      api.getAccounts(),
+      api.getDebts(),
       api.getTransactions({ limit: 5 }),
     ]).then(([s, a, d, t]) => {
       setSummary(s);
-      setAccounts(a);
+      setAccounts(a.personal || []);
       setDebts(d.filter(x => x.direction === 'owe').slice(0, 3));
       setRecent(t);
     }).finally(() => setLoading(false));
-  }, [household]);
+  }, []);
 
   if (loading) return (
     <div className="stack">
@@ -39,15 +36,12 @@ export default function Dashboard({ onAdd }) {
     </div>
   );
 
-  const now = new Date();
-  const income = Number(summary?.totals?.income || 0);
+  const now      = new Date();
+  const income   = Number(summary?.totals?.income || 0);
   const expenses = Number(summary?.totals?.expenses || 0);
   const sobrante = income - expenses;
 
-  // Solo cuentas personales para el balance
-  const personalBalance = (accounts.personal || [])
-    .reduce((s, a) => s + parseFloat(a.balance || 0), 0);
-
+  const totalBalance = accounts.reduce((s, a) => s + parseFloat(a.balance || 0), 0);
   const expenseCategories = (summary?.byCategory || []).filter(c => c.type === 'expense');
 
   return (
@@ -61,7 +55,7 @@ export default function Dashboard({ onAdd }) {
         <button className="btn btn-primary btn-sm" onClick={onAdd}>+ Agregar</button>
       </div>
 
-      {/* Balance personal */}
+      {/* Balance total */}
       <div className="card" style={{
         background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
         border: '1px solid #2d2b5e'
@@ -70,8 +64,8 @@ export default function Dashboard({ onAdd }) {
           marginBottom: 4, letterSpacing: '0.05em' }}>
           MIS CUENTAS
         </div>
-        <div className={`summary-num ${personalBalance >= 0 ? 'amount-income' : 'amount-expense'}`}>
-          {fmt(personalBalance)}
+        <div className={`summary-num ${totalBalance >= 0 ? 'amount-income' : 'amount-expense'}`}>
+          {fmt(totalBalance)}
         </div>
         <div style={{ display: 'flex', gap: 20, marginTop: 14 }}>
           <div>
@@ -92,41 +86,19 @@ export default function Dashboard({ onAdd }) {
         </div>
       </div>
 
-      {/* Acceso rápido al hogar si están conectadas */}
-      {household?.id && (
-        <button onClick={() => navigate('/hogar')}
-          style={{
-            background: 'linear-gradient(135deg, #0f2a1e 0%, #0a1f18 100%)',
-            border: '1px solid #1a4a30', borderRadius: 'var(--radius)',
-            padding: '14px 16px', cursor: 'pointer', textAlign: 'left', width: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-          }}>
-          <div>
-            <div style={{ fontSize: '0.72rem', color: '#4ade80', fontWeight: 600,
-              letterSpacing: '0.05em', marginBottom: 3 }}>
-              HOGAR COMPARTIDO
-            </div>
-            <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '0.95rem' }}>
-              {household.name}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: '#86efac', marginTop: 2 }}>
-              Ver gastos compartidos →
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem' }}>🏠</div>
-        </button>
-      )}
-
       {/* Mis cuentas */}
-      {(accounts.personal || []).length > 0 && (
+      {accounts.length > 0 && (
         <div>
           <h3 style={{ marginBottom: 10 }}>Mis cuentas</h3>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-            {(accounts.personal || []).map(a => (
+            {accounts.map(a => (
               <div key={a.id} className="account-card"
-                style={{ minWidth: 155, color: a.color || 'var(--accent)',
+                style={{
+                  minWidth: 155,
+                  color: a.color || 'var(--accent)',
                   background: `linear-gradient(135deg, ${a.color}22, var(--bg3))`,
-                  borderColor: `${a.color}44` }}>
+                  borderColor: `${a.color}44`
+                }}>
                 <div style={{ fontSize: '1.3rem' }}>{a.icon}</div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text2)', fontWeight: 500 }}>{a.name}</div>
                 <div className={`amount ${parseFloat(a.balance) >= 0 ? 'amount-income' : 'amount-expense'}`}
@@ -146,13 +118,13 @@ export default function Dashboard({ onAdd }) {
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <ResponsiveContainer width={130} height={130}>
               <PieChart>
-                <Pie data={expenseCategories} cx="50%" cy="50%" innerRadius={36} outerRadius={60}
-                  dataKey="total" paddingAngle={2}>
+                <Pie data={expenseCategories} cx="50%" cy="50%"
+                  innerRadius={36} outerRadius={60} dataKey="total" paddingAngle={2}>
                   {expenseCategories.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v) => fmt(v)} contentStyle={{
+                <Tooltip formatter={v => fmt(v)} contentStyle={{
                   background: 'var(--bg2)', border: '1px solid var(--border)',
                   borderRadius: 8, fontSize: '0.8rem'
                 }} />
@@ -185,12 +157,12 @@ export default function Dashboard({ onAdd }) {
               <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--text3)' }}
                 axisLine={false} tickLine={false} />
               <YAxis hide />
-              <Tooltip formatter={(v) => fmt(v)} contentStyle={{
+              <Tooltip formatter={v => fmt(v)} contentStyle={{
                 background: 'var(--bg2)', border: '1px solid var(--border)',
                 borderRadius: 8, fontSize: '0.8rem'
               }} />
-              <Bar dataKey="income" fill="var(--green)" radius={[4,4,0,0]} name="Ingresos" />
-              <Bar dataKey="expenses" fill="var(--red)" radius={[4,4,0,0]} name="Gastos" />
+              <Bar dataKey="income"   fill="var(--green)" radius={[4,4,0,0]} name="Ingresos" />
+              <Bar dataKey="expenses" fill="var(--red)"   radius={[4,4,0,0]} name="Gastos" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -211,8 +183,12 @@ export default function Dashboard({ onAdd }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div className="amount amount-expense" style={{ fontSize: '0.9rem' }}>{fmt(d.remaining)}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>de {fmt(d.total_amount)}</div>
+                    <div className="amount amount-expense" style={{ fontSize: '0.9rem' }}>
+                      {fmt(d.remaining)}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>
+                      de {fmt(d.total_amount)}
+                    </div>
                   </div>
                 </div>
                 <div className="progress-bar">
@@ -236,7 +212,8 @@ export default function Dashboard({ onAdd }) {
           <div className="card" style={{ padding: 8 }}>
             {recent.map(t => (
               <div key={t.id} className="tx-item">
-                <div className="tx-icon" style={{ background: `${t.category_color || 'var(--accent)'}22` }}>
+                <div className="tx-icon"
+                  style={{ background: `${t.category_color || 'var(--accent)'}22` }}>
                   {t.category_icon || (t.type === 'income' ? '↑' : '↓')}
                 </div>
                 <div className="tx-info">
@@ -253,7 +230,7 @@ export default function Dashboard({ onAdd }) {
       )}
 
       {/* Empty state */}
-      {recent.length === 0 && (accounts.personal || []).length === 0 && (
+      {recent.length === 0 && accounts.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text2)' }}>
           <div style={{ fontSize: '3rem', marginBottom: 12 }}>💸</div>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>Aún no hay movimientos</div>

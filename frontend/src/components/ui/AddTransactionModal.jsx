@@ -1,38 +1,37 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
-import { fmt, fmtDate, fmtRelative } from './helpers.jsx';
 
 const TYPES = [
-  { key: 'expense', label: '↓ Gasto' },
-  { key: 'income',  label: '↑ Ingreso' },
-  { key: 'transfer', label: '⇄ Transferencia' },
+  { key: 'expense',      label: '↓ Gasto' },
+  { key: 'income',       label: '↑ Ingreso' },
+  { key: 'transfer',     label: '⇄ Transferencia' },
   { key: 'debt_payment', label: '💳 Pagar deuda' },
 ];
 
 export default function AddTransactionModal({ onClose, onSaved }) {
-  const [type, setType] = useState('expense');
-  const [amount, setAmount] = useState('');
+  const [type, setType]             = useState('expense');
+  const [amount, setAmount]         = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [accountId, setAccountId] = useState('');
+  const [date, setDate]             = useState(new Date().toISOString().split('T')[0]);
+  const [accountId, setAccountId]   = useState('');
   const [toAccountId, setToAccountId] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [debtId, setDebtId] = useState('');
-  const [accounts, setAccounts] = useState([]);
+  const [debtId, setDebtId]         = useState('');
+  const [accounts, setAccounts]     = useState([]);
   const [categories, setCategories] = useState([]);
-  const [debts, setDebts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [debts, setDebts]           = useState([]);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
 
   useEffect(() => {
     Promise.all([
       api.getAccounts(),
       api.getCategories(),
-      api.getDebts()
+      api.getDebts(),
     ]).then(([accs, cats, dbs]) => {
-      const all = [...(accs.personal || []), ...(accs.shared || [])];
-      setAccounts(all);
-      if (all.length) setAccountId(String(all[0].id));
+      const personal = accs.personal || [];
+      setAccounts(personal);
+      if (personal.length) setAccountId(String(personal[0].id));
       setCategories(cats);
       setDebts(dbs.filter(d => d.direction === 'owe' && d.is_active));
     });
@@ -81,7 +80,8 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           {/* Tipo */}
           <div className="type-tabs">
             {TYPES.map(t => (
-              <button key={t.key} className={`type-tab ${t.key} ${type === t.key ? 'active' : ''}`}
+              <button key={t.key}
+                className={`type-tab ${t.key} ${type === t.key ? 'active' : ''}`}
                 onClick={() => setType(t.key)}>
                 {t.label}
               </button>
@@ -116,14 +116,17 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             <div className="field">
               <label>Cuenta</label>
               <select className="select" value={accountId} onChange={e => setAccountId(e.target.value)}>
-                {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
               </select>
             </div>
 
             {/* Fecha */}
             <div className="field">
               <label>Fecha</label>
-              <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} />
+              <input className="input" type="date" value={date}
+                onChange={e => setDate(e.target.value)} />
             </div>
           </div>
 
@@ -131,11 +134,13 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           {type === 'transfer' && (
             <div className="field">
               <label>Cuenta destino</label>
-              <select className="select" value={toAccountId} onChange={e => setToAccountId(e.target.value)}>
+              <select className="select" value={toAccountId}
+                onChange={e => setToAccountId(e.target.value)}>
                 <option value="">— Selecciona —</option>
-                {accounts.filter(a => String(a.id) !== accountId).map(a =>
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                )}
+                {accounts
+                  .filter(a => String(a.id) !== accountId)
+                  .map(a => <option key={a.id} value={a.id}>{a.name}</option>)
+                }
               </select>
             </div>
           )}
@@ -144,9 +149,12 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           {type === 'debt_payment' && (
             <div className="field">
               <label>Deuda a pagar</label>
-              <select className="select" value={debtId} onChange={e => setDebtId(e.target.value)}>
+              <select className="select" value={debtId}
+                onChange={e => setDebtId(e.target.value)}>
                 <option value="">— Selecciona —</option>
-                {debts.map(d => <option key={d.id} value={d.id}>{d.name} — {d.counterpart}</option>)}
+                {debts.map(d => (
+                  <option key={d.id} value={d.id}>{d.name} — {d.counterpart}</option>
+                ))}
               </select>
             </div>
           )}
@@ -155,9 +163,12 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           {type !== 'transfer' && (
             <div className="field">
               <label>Categoría</label>
-              <select className="select" value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+              <select className="select" value={categoryId}
+                onChange={e => setCategoryId(e.target.value)}>
                 <option value="">— Sin categoría —</option>
-                {filteredCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                {filteredCats.map(c => (
+                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                ))}
               </select>
             </div>
           )}
