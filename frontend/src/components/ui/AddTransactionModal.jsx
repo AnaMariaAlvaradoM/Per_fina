@@ -8,20 +8,22 @@ const TYPES = [
   { key: 'debt_payment', label: '💳 Pagar deuda' },
 ];
 
-export default function AddTransactionModal({ onClose, onSaved }) {
-  const [type, setType]             = useState('expense');
-  const [amount, setAmount]         = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate]             = useState(new Date().toISOString().split('T')[0]);
-  const [accountId, setAccountId]   = useState('');
-  const [toAccountId, setToAccountId] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [debtId, setDebtId]         = useState('');
-  const [accounts, setAccounts]     = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [debts, setDebts]           = useState([]);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
+export default function AddTransactionModal({ onClose, onSaved, transaction }) {
+  const editing = !!transaction;
+
+  const [type, setType]               = useState(transaction?.type || 'expense');
+  const [amount, setAmount]           = useState(transaction?.amount ? String(transaction.amount) : '');
+  const [description, setDescription] = useState(transaction?.description || '');
+  const [date, setDate]               = useState(transaction?.date || new Date().toISOString().split('T')[0]);
+  const [accountId, setAccountId]     = useState(transaction?.account_id ? String(transaction.account_id) : '');
+  const [toAccountId, setToAccountId] = useState(transaction?.transfer_to_account_id ? String(transaction.transfer_to_account_id) : '');
+  const [categoryId, setCategoryId]   = useState(transaction?.category_id ? String(transaction.category_id) : '');
+  const [debtId, setDebtId]           = useState(transaction?.debt_id ? String(transaction.debt_id) : '');
+  const [accounts, setAccounts]       = useState([]);
+  const [categories, setCategories]   = useState([]);
+  const [debts, setDebts]             = useState([]);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -31,7 +33,7 @@ export default function AddTransactionModal({ onClose, onSaved }) {
     ]).then(([accs, cats, dbs]) => {
       const personal = accs.personal || [];
       setAccounts(personal);
-      if (personal.length) setAccountId(String(personal[0].id));
+      if (!editing && personal.length) setAccountId(String(personal[0].id));
       setCategories(cats);
       setDebts(dbs.filter(d => d.direction === 'owe' && d.is_active));
     });
@@ -49,7 +51,7 @@ export default function AddTransactionModal({ onClose, onSaved }) {
     setLoading(true);
     setError('');
     try {
-      await api.createTransaction({
+      const payload = {
         amount: parseFloat(amount),
         type,
         description,
@@ -58,7 +60,14 @@ export default function AddTransactionModal({ onClose, onSaved }) {
         category_id: categoryId ? parseInt(categoryId) : null,
         debt_id: type === 'debt_payment' && debtId ? parseInt(debtId) : null,
         transfer_to_account_id: type === 'transfer' && toAccountId ? parseInt(toAccountId) : null,
-      });
+      };
+
+      if (editing) {
+        await api.updateTransaction(transaction.id, payload);
+      } else {
+        await api.createTransaction(payload);
+      }
+
       onSaved?.();
       onClose();
     } catch (e) {
@@ -72,12 +81,11 @@ export default function AddTransactionModal({ onClose, onSaved }) {
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
-          <h2>Nueva transacción</h2>
+          <h2>{editing ? 'Editar transacción' : 'Nueva transacción'}</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
         <div className="stack">
-          {/* Tipo */}
           <div className="type-tabs">
             {TYPES.map(t => (
               <button key={t.key}
@@ -88,7 +96,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             ))}
           </div>
 
-          {/* Monto */}
           <div className="field">
             <label>Monto (COP)</label>
             <div style={{ position: 'relative' }}>
@@ -112,7 +119,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           </div>
 
           <div className="grid-2">
-            {/* Cuenta */}
             <div className="field">
               <label>Cuenta</label>
               <select className="select" value={accountId} onChange={e => setAccountId(e.target.value)}>
@@ -121,8 +127,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
                 ))}
               </select>
             </div>
-
-            {/* Fecha */}
             <div className="field">
               <label>Fecha</label>
               <input className="input" type="date" value={date}
@@ -130,7 +134,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             </div>
           </div>
 
-          {/* Cuenta destino (transferencia) */}
           {type === 'transfer' && (
             <div className="field">
               <label>Cuenta destino</label>
@@ -145,7 +148,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             </div>
           )}
 
-          {/* Deuda (pago de deuda) */}
           {type === 'debt_payment' && (
             <div className="field">
               <label>Deuda a pagar</label>
@@ -159,7 +161,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             </div>
           )}
 
-          {/* Categoría */}
           {type !== 'transfer' && (
             <div className="field">
               <label>Categoría</label>
@@ -173,7 +174,6 @@ export default function AddTransactionModal({ onClose, onSaved }) {
             </div>
           )}
 
-          {/* Descripción */}
           <div className="field">
             <label>Descripción (opcional)</label>
             <input className="input" placeholder="¿En qué fue?" value={description}
@@ -183,7 +183,7 @@ export default function AddTransactionModal({ onClose, onSaved }) {
           {error && <div className="field-error">⚠ {error}</div>}
 
           <button className="btn btn-primary btn-full" onClick={submit} disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar transacción'}
+            {loading ? 'Guardando...' : editing ? 'Guardar cambios' : 'Guardar transacción'}
           </button>
         </div>
       </div>

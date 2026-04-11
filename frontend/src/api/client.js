@@ -21,14 +21,14 @@ const req = async (method, path, body) => {
 export const api = {
   // Auth
   register: (body) => req('POST', '/auth/register', body),
-  login: (body) => req('POST', '/auth/login', body),
-  me: () => req('GET', '/auth/me'),
+  login:    (body) => req('POST', '/auth/login', body),
+  me:       ()     => req('GET',  '/auth/me'),
 
   // Accounts
-  getAccounts: () => req('GET', '/accounts'),
-  createAccount: (body) => req('POST', '/accounts', body),
-  updateAccount: (id, body) => req('PUT', `/accounts/${id}`, body),
-  deleteAccount: (id) => req('DELETE', `/accounts/${id}`),
+  getAccounts:    ()         => req('GET',    '/accounts'),
+  createAccount:  (body)     => req('POST',   '/accounts', body),
+  updateAccount:  (id, body) => req('PUT',    `/accounts/${id}`, body),
+  deleteAccount:  (id)       => req('DELETE', `/accounts/${id}`),
 
   // Transactions
   getTransactions: (params = {}) => {
@@ -39,15 +39,23 @@ export const api = {
     const q = new URLSearchParams(params).toString();
     return req('GET', `/transactions/summary${q ? `?${q}` : ''}`);
   },
-  createTransaction: (body) => req('POST', '/transactions', body),
-  deleteTransaction: (id) => req('DELETE', `/transactions/${id}`),
+  createTransaction: (body)     => req('POST',   '/transactions', body),
+  updateTransaction: (id, body) => req('PUT',    `/transactions/${id}`, body),
+  deleteTransaction: (id)       => req('DELETE', `/transactions/${id}`),
 
   // Debts
-  getDebts: () => req('GET', '/debts'),
-  createDebt: (body) => req('POST', '/debts', body),
-  updateDebt: (id, body) => req('PUT', `/debts/${id}`, body),
+  getDebts:    ()         => req('GET', '/debts'),
+  createDebt:  (body)     => req('POST', '/debts', body),
+  updateDebt:  (id, body) => req('PUT',  `/debts/${id}`, body),
 
   // Categories
-  getCategories: () => req('GET', '/categories'),
+  getCategories:  ()     => req('GET',  '/categories'),
   createCategory: (body) => req('POST', '/categories', body),
+
+
+  getFixed:       ()         => req('GET',    '/fixed-expenses'),
+createFixed:    (body)     => req('POST',   '/fixed-expenses', body),
+updateFixed:    (id, body) => req('PUT',    `/fixed-expenses/${id}`, body),
+deleteFixed:    (id)       => req('DELETE', `/fixed-expenses/${id}`),
+registerFixed:  (id, body) => req('POST',   `/fixed-expenses/${id}/register`, body),
 };

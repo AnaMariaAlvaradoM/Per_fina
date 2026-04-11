@@ -5,7 +5,7 @@ const NAV_MOBILE = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
   null,
-  { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
+  { path: '/fixed',        icon: '📋', label: 'Fijos' },
   { path: '/debts',        icon: '💳', label: 'Deudas' },
 ];
 
@@ -13,6 +13,7 @@ const NAV_SIDEBAR = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
   { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
+  { path: '/fixed',        icon: '📋', label: 'Fijos' },
   { path: '/debts',        icon: '💳', label: 'Deudas' },
 ];
 
@@ -31,7 +32,8 @@ export default function Layout({ children, onAdd }) {
         </div>
 
         {NAV_SIDEBAR.map(n => (
-          <button key={n.path} className={`sidebar-link ${active(n.path)}`} onClick={() => navigate(n.path)}>
+          <button key={n.path} className={`sidebar-link ${active(n.path)}`}
+            onClick={() => navigate(n.path)}>
             <span className="sidebar-icon">{n.icon}</span>
             {n.label}
           </button>
@@ -64,7 +66,8 @@ export default function Layout({ children, onAdd }) {
               <span className="nav-icon">+</span>
             </button>
           ) : (
-            <button key={n.path} className={`bottom-nav-item ${active(n.path)}`} onClick={() => navigate(n.path)}>
+            <button key={n.path} className={`bottom-nav-item ${active(n.path)}`}
+              onClick={() => navigate(n.path)}>
               <span className="nav-icon">{n.icon}</span>
               {n.label}
             </button>
