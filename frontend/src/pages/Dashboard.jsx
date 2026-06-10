@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { fmt, fmtRelative } from '../components/ui/helpers.jsx';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const COLORS = ['#6366f1','#f43f5e','#f59e0b','#10b981','#3b82f6','#8b5cf6','#06b6d4','#ec4899'];
@@ -145,26 +145,6 @@ export default function Dashboard({ onAdd }) {
               ))}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Últimos 6 meses */}
-      {(summary?.monthly?.length || 0) > 1 && (
-        <div className="card">
-          <h3 style={{ marginBottom: 14 }}>Últimos meses</h3>
-          <ResponsiveContainer width="100%" height={110}>
-            <BarChart data={summary.monthly} barGap={2}>
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--text3)' }}
-                axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip formatter={v => fmt(v)} contentStyle={{
-                background: 'var(--bg2)', border: '1px solid var(--border)',
-                borderRadius: 8, fontSize: '0.8rem'
-              }} />
-              <Bar dataKey="income"   fill="var(--green)" radius={[4,4,0,0]} name="Ingresos" />
-              <Bar dataKey="expenses" fill="var(--red)"   radius={[4,4,0,0]} name="Gastos" />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       )}
 
