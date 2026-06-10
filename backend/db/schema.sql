@@ -64,6 +64,12 @@ CREATE TABLE IF NOT EXISTS categories (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Índice único parcial: impide que las categorías default se dupliquen
+-- (necesario para que el ON CONFLICT del seed funcione, ya que owner_id es NULL)
+CREATE UNIQUE INDEX IF NOT EXISTS categories_default_unique
+  ON categories (name, type)
+  WHERE is_default = true;
+
 -- Categorías por defecto
 INSERT INTO categories (name, icon, color, type, is_default) VALUES
   ('Comida', '🍔', '#f97316', 'expense', true),
@@ -81,7 +87,7 @@ INSERT INTO categories (name, icon, color, type, is_default) VALUES
   ('Otros ingresos', '➕', '#14b8a6', 'income', true),
   ('Deuda', '💳', '#ef4444', 'expense', true),
   ('Otros gastos', '📦', '#94a3b8', 'expense', true)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name, type) WHERE is_default = true DO NOTHING;
 
 -- Deudas
 CREATE TABLE IF NOT EXISTS debts (
