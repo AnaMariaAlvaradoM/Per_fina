@@ -130,3 +130,98 @@ CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(created_by);
 CREATE INDEX IF NOT EXISTS idx_transactions_household ON transactions(household_id);
 CREATE INDEX IF NOT EXISTS idx_debts_owner ON debts(owner_id);
+
+-- ============================================
+-- GASTOS FIJOS
+-- (tabla que ya existía en la base de datos de producción
+--  pero faltaba en este schema.sql — se agrega en modo idempotente)
+-- ============================================
+CREATE TABLE IF NOT EXISTS fixed_expenses (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  amount DECIMAL(15,2) NOT NULL,
+  category_id INTEGER REFERENCES categories(id),
+  owner_id INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fixed_expenses_owner ON fixed_expenses(owner_id);
+
+-- Vínculo transacción → gasto fijo que la originó (para saber qué fijos
+-- ya se pagaron este mes y calcular el flujo de caja proyectado)
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fixed_expense_id INTEGER REFERENCES fixed_expenses(id);
+
+-- ============================================
+-- PRESUPUESTO
+-- ============================================
+
+-- Grupo al que pertenece cada categoría, para el módulo de presupuesto:
+-- 'basicos' | 'deudas' | 'trabajo' | 'ahorro' | 'personales' (NULL para categorías de ingreso)
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS group_key VARCHAR(20);
+
+-- Mapeo de categorías default existentes a su grupo (no borra ni crea, solo clasifica)
+UPDATE categories SET group_key = 'basicos'    WHERE is_default = true AND name IN ('Comida','Transporte','Servicios','Salud','Educación','Mascota','Hogar');
+UPDATE categories SET group_key = 'deudas'     WHERE is_default = true AND name = 'Deuda';
+UPDATE categories SET group_key = 'ahorro'     WHERE is_default = true AND name = 'Ahorro';
+UPDATE categories SET group_key = 'personales' WHERE is_default = true AND name IN ('Ropa','Entretenimiento','Otros gastos');
+
+-- Categorías nuevas recomendadas, agrupadas (se agregan sin tocar las existentes)
+INSERT INTO categories (name, icon, color, type, is_default, group_key) VALUES
+  -- 🏠 Básicos
+  ('Arriendo',            '🏘️', '#3b82f6', 'expense', true, 'basicos'),
+  ('Mercado',             '🛒', '#f97316', 'expense', true, 'basicos'),
+  ('Internet',            '📶', '#0ea5e9', 'expense', true, 'basicos'),
+  ('Celular',             '📱', '#0ea5e9', 'expense', true, 'basicos'),
+  ('Gasolina',            '⛽', '#eab308', 'expense', true, 'basicos'),
+  ('Seguros',             '🛡️', '#64748b', 'expense', true, 'basicos'),
+  -- 💳 Deudas
+  ('Tarjeta de crédito',  '💳', '#ef4444', 'expense', true, 'deudas'),
+  ('RappiCard',           '🛵', '#f97316', 'expense', true, 'deudas'),
+  ('ADDI',                '🏷️', '#ef4444', 'expense', true, 'deudas'),
+  ('Nequi (crédito)',     '🟣', '#a855f7', 'expense', true, 'deudas'),
+  ('Caja Social',         '🏦', '#ef4444', 'expense', true, 'deudas'),
+  ('Crédito vehículo',    '🚗', '#ef4444', 'expense', true, 'deudas'),
+  ('Otros préstamos',     '🧾', '#ef4444', 'expense', true, 'deudas'),
+  -- 💼 Trabajo
+  ('ChatGPT',             '🤖', '#8b5cf6', 'expense', true, 'trabajo'),
+  ('Claude',              '✨', '#8b5cf6', 'expense', true, 'trabajo'),
+  ('Software',            '🧩', '#7c3aed', 'expense', true, 'trabajo'),
+  ('Dominio',             '🌐', '#7c3aed', 'expense', true, 'trabajo'),
+  ('Hosting',             '🖥️', '#7c3aed', 'expense', true, 'trabajo'),
+  ('Cursos',              '🎓', '#8b5cf6', 'expense', true, 'trabajo'),
+  -- 🎯 Ahorro e inversión
+  ('Fondo de emergencia', '🆘', '#10b981', 'expense', true, 'ahorro'),
+  ('Ahorro vehículo',     '🚙', '#10b981', 'expense', true, 'ahorro'),
+  ('Ahorro vivienda',     '🏡', '#10b981', 'expense', true, 'ahorro'),
+  ('Inversiones',         '📈', '#059669', 'expense', true, 'ahorro'),
+  ('Cesantías',           '🧾', '#059669', 'expense', true, 'ahorro'),
+  -- 🎉 Gastos personales
+  ('Restaurantes',        '🍽️', '#ec4899', 'expense', true, 'personales'),
+  ('Salidas',              '🎉', '#ec4899', 'expense', true, 'personales'),
+  ('Compras personales',  '🛍️', '#db2777', 'expense', true, 'personales'),
+  ('Streaming',            '📺', '#06b6d4', 'expense', true, 'personales'),
+  ('Regalos',              '🎁', '#db2777', 'expense', true, 'personales'),
+  ('Viajes',                '✈️', '#06b6d4', 'expense', true, 'personales')
+ON CONFLICT (name, type) WHERE is_default = true DO NOTHING;
+
+-- Presupuesto mensual (un registro por usuario por mes, siempre día 1)
+CREATE TABLE IF NOT EXISTS budgets (
+  id SERIAL PRIMARY KEY,
+  owner_id INTEGER REFERENCES users(id) NOT NULL,
+  month DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(owner_id, month)
+);
+
+-- Monto asignado por categoría dentro de un presupuesto mensual
+CREATE TABLE IF NOT EXISTS budget_items (
+  id SERIAL PRIMARY KEY,
+  budget_id INTEGER REFERENCES budgets(id) ON DELETE CASCADE,
+  category_id INTEGER REFERENCES categories(id),
+  amount_assigned DECIMAL(15,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(budget_id, category_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_budgets_owner_month ON budgets(owner_id, month);
+CREATE INDEX IF NOT EXISTS idx_budget_items_budget ON budget_items(budget_id);

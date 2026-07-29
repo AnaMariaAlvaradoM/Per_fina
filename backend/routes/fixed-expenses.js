@@ -85,9 +85,9 @@ router.post('/:id/register', auth, async (req, res) => {
     const finalDate   = date || new Date().toISOString().split('T')[0];
 
     await client.query(
-      `INSERT INTO transactions (amount, type, description, date, account_id, category_id, created_by)
-       VALUES ($1, 'expense', $2, $3, $4, $5, $6)`,
-      [finalAmount, fixed.name, finalDate, account_id, fixed.category_id, req.user.id]
+      `INSERT INTO transactions (amount, type, description, date, account_id, category_id, created_by, fixed_expense_id)
+       VALUES ($1, 'expense', $2, $3, $4, $5, $6, $7)`,
+      [finalAmount, fixed.name, finalDate, account_id, fixed.category_id, req.user.id, fixed.id]
     );
 
     await client.query(

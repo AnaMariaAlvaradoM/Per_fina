@@ -18,6 +18,7 @@ app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/debts', require('./routes/debts'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/fixed-expenses', require('./routes/fixed-expenses'));
+app.use('/api/budgets', require('./routes/budgets'));
 // app.use('/api/ai', require('./routes/ai'));
 
 app.get('/health', (req, res) => res.json({ status: 'ok', ts: new Date() }));

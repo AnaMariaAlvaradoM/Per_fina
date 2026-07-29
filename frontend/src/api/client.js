@@ -58,4 +58,10 @@ createFixed:    (body)     => req('POST',   '/fixed-expenses', body),
 updateFixed:    (id, body) => req('PUT',    `/fixed-expenses/${id}`, body),
 deleteFixed:    (id)       => req('DELETE', `/fixed-expenses/${id}`),
 registerFixed:  (id, body) => req('POST',   `/fixed-expenses/${id}/register`, body),
+
+  // Budgets
+  getBudget:        (month)                     => req('GET',  `/budgets/${month}`),
+  getBudgetSummary:  (month)                     => req('GET',  `/budgets/${month}/summary`),
+  updateBudgetItem:  (month, categoryId, amount) => req('PUT',  `/budgets/${month}/items/${categoryId}`, { amount }),
+  resetBudget:       (month)                     => req('POST', `/budgets/${month}/reset`),
 };
