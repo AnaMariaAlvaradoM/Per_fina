@@ -56,12 +56,12 @@ const getOrCreateBudget = async (ownerId, month) => {
   return budget;
 };
 
-// Gasto real por categoría en un rango de fechas (incluye pagos de deuda)
+// Gasto real por categoría en un rango de fechas
 const getRealByCategory = async (ownerId, start, end) => {
   const result = await pool.query(
     `SELECT category_id, SUM(amount) as real
      FROM transactions
-     WHERE created_by=$1 AND type IN ('expense','debt_payment')
+     WHERE created_by=$1 AND type = 'expense'
        AND date BETWEEN $2 AND $3
      GROUP BY category_id`,
     [ownerId, start, end]
@@ -167,7 +167,7 @@ router.get('/:month/summary', auth, async (req, res) => {
     const totals = await pool.query(
       `SELECT
         COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END),0) as ingresos,
-        COALESCE(SUM(CASE WHEN type IN ('expense','debt_payment') THEN amount ELSE 0 END),0) as gastos
+        COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END),0) as gastos
        FROM transactions
        WHERE created_by=$1 AND date BETWEEN $2 AND $3`,
       [req.user.id, start, end]
@@ -219,7 +219,7 @@ router.get('/:month/summary', auth, async (req, res) => {
         COALESCE(SUM(
           CASE
             WHEN t.type = 'income' THEN t.amount
-            WHEN t.type = 'expense' OR t.type = 'debt_payment' THEN -t.amount
+            WHEN t.type = 'expense' THEN -t.amount
             WHEN t.type = 'transfer' AND t.account_id = a.id THEN -t.amount
             WHEN t.type = 'transfer' AND t.transfer_to_account_id = a.id THEN t.amount
             ELSE 0
@@ -232,14 +232,6 @@ router.get('/:month/summary', auth, async (req, res) => {
       [req.user.id]
     );
     const saldoActual = accounts.rows.reduce((s, a) => s + Number(a.balance), 0);
-
-    // Deudas pendientes por pagar
-    const debts = await pool.query(
-      `SELECT COALESCE(SUM(total_amount - paid_amount),0) as pendiente
-       FROM debts WHERE owner_id=$1 AND direction='owe' AND is_active=true`,
-      [req.user.id]
-    );
-    const deudasPendientes = Number(debts.rows[0].pendiente);
 
     // Gastos fijos que aún no se han registrado este mes → pagos pendientes
     const fixed = await pool.query(
@@ -272,16 +264,6 @@ router.get('/:month/summary', auth, async (req, res) => {
     });
 
     const today = new Date();
-    const in7days = new Date(today.getTime() + 7 * 86400000);
-    const dueSoon = await pool.query(
-      `SELECT name, due_date FROM debts
-       WHERE owner_id=$1 AND direction='owe' AND is_active=true
-         AND due_date BETWEEN $2 AND $3`,
-      [req.user.id, today.toISOString().split('T')[0], in7days.toISOString().split('T')[0]]
-    );
-    dueSoon.rows.forEach(d => {
-      alerts.push({ type: 'warning', message: `${d.name} vence el ${new Date(d.due_date).toLocaleDateString('es-CO')}` });
-    });
 
     // Solo se evalúa cerca del fin de mes (últimos 3 días)
     const lastDayOfMonth = new Date(end).getDate();
@@ -297,7 +279,7 @@ router.get('/:month/summary', auth, async (req, res) => {
       month,
       cards: {
         ingresos, gastos, ahorro_mes: ahorroMes,
-        disponible: saldoActual, deudas_pendientes: deudasPendientes,
+        disponible: saldoActual,
         pagos_pendientes: pagosPendientes
       },
       desviaciones,

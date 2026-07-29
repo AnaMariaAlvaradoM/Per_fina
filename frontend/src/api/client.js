@@ -43,11 +43,6 @@ export const api = {
   updateTransaction: (id, body) => req('PUT',    `/transactions/${id}`, body),
   deleteTransaction: (id)       => req('DELETE', `/transactions/${id}`),
 
-  // Debts
-  getDebts:    ()         => req('GET', '/debts'),
-  createDebt:  (body)     => req('POST', '/debts', body),
-  updateDebt:  (id, body) => req('PUT',  `/debts/${id}`, body),
-
   // Categories
   getCategories:  ()     => req('GET',  '/categories'),
   createCategory: (body) => req('POST', '/categories', body),

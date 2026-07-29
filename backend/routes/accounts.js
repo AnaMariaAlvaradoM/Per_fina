@@ -11,7 +11,7 @@ router.get('/', auth, async (req, res) => {
         COALESCE(SUM(
           CASE
             WHEN t.type = 'income' THEN t.amount
-            WHEN t.type = 'expense' OR t.type = 'debt_payment' THEN -t.amount
+            WHEN t.type = 'expense' THEN -t.amount
             WHEN t.type = 'transfer' AND t.account_id = a.id THEN -t.amount
             WHEN t.type = 'transfer' AND t.transfer_to_account_id = a.id THEN t.amount
             ELSE 0

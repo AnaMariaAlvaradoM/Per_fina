@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
 
 const TYPES = [
-  { key: 'expense',      label: '↓ Gasto' },
-  { key: 'income',       label: '↑ Ingreso' },
-  { key: 'transfer',     label: '⇄ Transferencia' },
-  { key: 'debt_payment', label: '💳 Pagar deuda' },
+  { key: 'expense',  label: '↓ Gasto' },
+  { key: 'income',   label: '↑ Ingreso' },
+  { key: 'transfer', label: '⇄ Transferencia' },
 ];
 
 export default function AddTransactionModal({ onClose, onSaved, transaction }) {
@@ -18,10 +17,8 @@ export default function AddTransactionModal({ onClose, onSaved, transaction }) {
   const [accountId, setAccountId]     = useState(transaction?.account_id ? String(transaction.account_id) : '');
   const [toAccountId, setToAccountId] = useState(transaction?.transfer_to_account_id ? String(transaction.transfer_to_account_id) : '');
   const [categoryId, setCategoryId]   = useState(transaction?.category_id ? String(transaction.category_id) : '');
-  const [debtId, setDebtId]           = useState(transaction?.debt_id ? String(transaction.debt_id) : '');
   const [accounts, setAccounts]       = useState([]);
   const [categories, setCategories]   = useState([]);
-  const [debts, setDebts]             = useState([]);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
 
@@ -29,13 +26,11 @@ export default function AddTransactionModal({ onClose, onSaved, transaction }) {
     Promise.all([
       api.getAccounts(),
       api.getCategories(),
-      api.getDebts(),
-    ]).then(([accs, cats, dbs]) => {
+    ]).then(([accs, cats]) => {
       const personal = accs.personal || [];
       setAccounts(personal);
       if (!editing && personal.length) setAccountId(String(personal[0].id));
       setCategories(cats);
-      setDebts(dbs.filter(d => d.direction === 'owe' && d.is_active));
     });
   }, []);
 
@@ -58,7 +53,6 @@ export default function AddTransactionModal({ onClose, onSaved, transaction }) {
         date,
         account_id: parseInt(accountId),
         category_id: categoryId ? parseInt(categoryId) : null,
-        debt_id: type === 'debt_payment' && debtId ? parseInt(debtId) : null,
         transfer_to_account_id: type === 'transfer' && toAccountId ? parseInt(toAccountId) : null,
       };
 
@@ -144,19 +138,6 @@ export default function AddTransactionModal({ onClose, onSaved, transaction }) {
                   .filter(a => String(a.id) !== accountId)
                   .map(a => <option key={a.id} value={a.id}>{a.name}</option>)
                 }
-              </select>
-            </div>
-          )}
-
-          {type === 'debt_payment' && (
-            <div className="field">
-              <label>Deuda a pagar</label>
-              <select className="select" value={debtId}
-                onChange={e => setDebtId(e.target.value)}>
-                <option value="">— Selecciona —</option>
-                {debts.map(d => (
-                  <option key={d.id} value={d.id}>{d.name} — {d.counterpart}</option>
-                ))}
               </select>
             </div>
           )}

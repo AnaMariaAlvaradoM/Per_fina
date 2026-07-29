@@ -44,15 +44,14 @@ router.get('/', auth, async (req, res) => {
 router.get('/export', auth, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT 
+      `SELECT
         TO_CHAR(t.date, 'YYYY-MM-DD') as fecha,
         t.description as descripcion,
         c.name as categoria,
-        CASE t.type 
+        CASE t.type
           WHEN 'income' THEN 'Ingreso'
           WHEN 'expense' THEN 'Gasto'
           WHEN 'transfer' THEN 'Transferencia'
-          WHEN 'debt_payment' THEN 'Pago deuda'
         END as tipo,
         t.amount as monto,
         a.name as cuenta,
@@ -83,7 +82,7 @@ router.get('/summary', auth, async (req, res) => {
     const totals = await pool.query(
       `SELECT
         SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as income,
-        SUM(CASE WHEN type='expense' OR type='debt_payment' THEN amount ELSE 0 END) as expenses,
+        SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as expenses,
         COUNT(*) as transaction_count
        FROM transactions
        WHERE created_by = $1 AND date BETWEEN $2 AND $3`,
@@ -107,7 +106,7 @@ router.get('/summary', auth, async (req, res) => {
       `SELECT
         TO_CHAR(date, 'YYYY-MM') as month,
         SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as income,
-        SUM(CASE WHEN type='expense' OR type='debt_payment' THEN amount ELSE 0 END) as expenses
+        SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as expenses
        FROM transactions
        WHERE created_by = $1 AND date >= NOW() - INTERVAL '6 months'
        GROUP BY TO_CHAR(date, 'YYYY-MM')
@@ -128,7 +127,7 @@ router.get('/summary', auth, async (req, res) => {
 
 // POST /api/transactions
 router.post('/', auth, async (req, res) => {
-  const { amount, type, description, date, account_id, category_id, debt_id, transfer_to_account_id, notes } = req.body;
+  const { amount, type, description, date, account_id, category_id, transfer_to_account_id, notes } = req.body;
 
   if (!amount || !type || !account_id)
     return res.status(400).json({ error: 'amount, type y account_id son requeridos' });
@@ -138,19 +137,16 @@ router.post('/', auth, async (req, res) => {
     await client.query('BEGIN');
 
     const result = await client.query(
-      `INSERT INTO transactions (amount, type, description, date, account_id, category_id, debt_id, transfer_to_account_id, created_by, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      `INSERT INTO transactions (amount, type, description, date, account_id, category_id, transfer_to_account_id, created_by, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
       [amount, type, description, date || new Date().toISOString().split('T')[0],
-       account_id, category_id, debt_id, transfer_to_account_id, req.user.id, notes]
+       account_id, category_id, transfer_to_account_id, req.user.id, notes]
     );
 
     if (type === 'income') {
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [amount, account_id]);
-    } else if (type === 'expense' || type === 'debt_payment') {
+    } else if (type === 'expense') {
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [amount, account_id]);
-      if (debt_id && type === 'debt_payment') {
-        await client.query('UPDATE debts SET paid_amount = paid_amount + $1 WHERE id = $2', [amount, debt_id]);
-      }
     } else if (type === 'transfer' && transfer_to_account_id) {
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [amount, account_id]);
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [amount, transfer_to_account_id]);
@@ -179,7 +175,7 @@ router.post('/', auth, async (req, res) => {
 
 // PUT /api/transactions/:id
 router.put('/:id', auth, async (req, res) => {
-  const { amount, type, description, date, account_id, category_id, debt_id, transfer_to_account_id, notes } = req.body;
+  const { amount, type, description, date, account_id, category_id, transfer_to_account_id, notes } = req.body;
 
   const client = await pool.connect();
   try {
@@ -194,11 +190,8 @@ router.put('/:id', auth, async (req, res) => {
 
     if (old.type === 'income') {
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [old.amount, old.account_id]);
-    } else if (old.type === 'expense' || old.type === 'debt_payment') {
+    } else if (old.type === 'expense') {
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [old.amount, old.account_id]);
-      if (old.debt_id) {
-        await client.query('UPDATE debts SET paid_amount = paid_amount - $1 WHERE id = $2', [old.amount, old.debt_id]);
-      }
     } else if (old.type === 'transfer' && old.transfer_to_account_id) {
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [old.amount, old.account_id]);
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [old.amount, old.transfer_to_account_id]);
@@ -207,19 +200,16 @@ router.put('/:id', auth, async (req, res) => {
     const updated = await client.query(
       `UPDATE transactions
        SET amount=$1, type=$2, description=$3, date=$4, account_id=$5,
-           category_id=$6, debt_id=$7, transfer_to_account_id=$8, notes=$9
-       WHERE id=$10 AND created_by=$11 RETURNING *`,
+           category_id=$6, transfer_to_account_id=$7, notes=$8
+       WHERE id=$9 AND created_by=$10 RETURNING *`,
       [amount, type, description, date, account_id, category_id,
-       debt_id || null, transfer_to_account_id || null, notes, req.params.id, req.user.id]
+       transfer_to_account_id || null, notes, req.params.id, req.user.id]
     );
 
     if (type === 'income') {
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [amount, account_id]);
-    } else if (type === 'expense' || type === 'debt_payment') {
+    } else if (type === 'expense') {
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [amount, account_id]);
-      if (debt_id && type === 'debt_payment') {
-        await client.query('UPDATE debts SET paid_amount = paid_amount + $1 WHERE id = $2', [amount, debt_id]);
-      }
     } else if (type === 'transfer' && transfer_to_account_id) {
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [amount, account_id]);
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [amount, transfer_to_account_id]);
@@ -262,11 +252,8 @@ router.delete('/:id', auth, async (req, res) => {
 
     if (tx.type === 'income') {
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [tx.amount, tx.account_id]);
-    } else if (tx.type === 'expense' || tx.type === 'debt_payment') {
+    } else if (tx.type === 'expense') {
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [tx.amount, tx.account_id]);
-      if (tx.debt_id) {
-        await client.query('UPDATE debts SET paid_amount = paid_amount - $1 WHERE id = $2', [tx.amount, tx.debt_id]);
-      }
     } else if (tx.type === 'transfer' && tx.transfer_to_account_id) {
       await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [tx.amount, tx.account_id]);
       await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [tx.amount, tx.transfer_to_account_id]);

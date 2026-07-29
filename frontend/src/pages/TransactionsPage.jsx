@@ -63,7 +63,7 @@ export default function TransactionsPage({ onAdd }) {
 
       Object.entries(porMes).sort().forEach(([mes, txs]) => {
         const ingresos = txs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-        const gastos = txs.filter(t => t.type === 'expense' || t.type === 'debt_payment').reduce((s, t) => s + Number(t.amount), 0);
+        const gastos = txs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
         const [anio, numMes] = mes.split('-');
         const nombreMes = `${NOMBRES_MESES[parseInt(numMes) - 1]} ${anio}`;
         resumenData.push([nombreMes, ingresos, gastos, ingresos - gastos]);
@@ -84,7 +84,7 @@ export default function TransactionsPage({ onAdd }) {
 
         const filas = [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto', 'Cuenta', 'Notas']];
         txs.forEach(t => {
-          const TIPOS = { income: 'Ingreso', expense: 'Gasto', transfer: 'Transferencia', debt_payment: 'Pago deuda' };
+          const TIPOS = { income: 'Ingreso', expense: 'Gasto', transfer: 'Transferencia' };
           filas.push([
             t.date,
             t.description || '',
@@ -109,7 +109,7 @@ export default function TransactionsPage({ onAdd }) {
 
   const TYPE_LABELS = {
     '': 'Todos', income: '↑ Ingresos', expense: '↓ Gastos',
-    transfer: '⇄ Transferencias', debt_payment: '💳 Deudas',
+    transfer: '⇄ Transferencias',
   };
 
   return (

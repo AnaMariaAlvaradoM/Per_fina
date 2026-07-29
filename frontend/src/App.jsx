@@ -6,7 +6,6 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import TransactionsPage from './pages/TransactionsPage';
 import AccountsPage from './pages/AccountsPage';
-import DebtsPage from './pages/DebtsPage';
 import AddTransactionModal from './components/ui/AddTransactionModal';
 import { ToastContainer, useToast } from './components/ui/helpers.jsx';
 import FixedExpensesPage from './pages/FixedExpensesPage';
@@ -41,7 +40,6 @@ function ProtectedApp() {
           <Route path="/"             element={<Dashboard      key={refreshKey} onAdd={() => setShowAdd(true)} />} />
           <Route path="/transactions" element={<TransactionsPage key={refreshKey} onAdd={() => setShowAdd(true)} />} />
           <Route path="/accounts"     element={<AccountsPage  key={refreshKey} />} />
-          <Route path="/debts"        element={<DebtsPage      key={refreshKey} onAdd={() => setShowAdd(true)} />} />
           <Route path="/fixed"        element={<FixedExpensesPage key={refreshKey} />} />
           <Route path="/budget"       element={<BudgetPage     key={refreshKey} />} />
           <Route path="*"             element={<Navigate to="/" />} />

@@ -11,7 +11,6 @@ export default function Dashboard({ onAdd }) {
   const { user } = useAuth();
   const [summary, setSummary]   = useState(null);
   const [accounts, setAccounts] = useState([]);
-  const [debts, setDebts]       = useState([]);
   const [recent, setRecent]     = useState([]);
   const [loading, setLoading]   = useState(true);
 
@@ -20,12 +19,10 @@ export default function Dashboard({ onAdd }) {
     Promise.all([
       api.getSummary({ year: now.getFullYear(), month: now.getMonth() + 1 }),
       api.getAccounts(),
-      api.getDebts(),
       api.getTransactions({ limit: 5 }),
-    ]).then(([s, a, d, t]) => {
+    ]).then(([s, a, t]) => {
       setSummary(s);
       setAccounts(a.personal || []);
-      setDebts(d.filter(x => x.direction === 'owe').slice(0, 3));
       setRecent(t);
     }).finally(() => setLoading(false));
   }, []);
@@ -144,43 +141,6 @@ export default function Dashboard({ onAdd }) {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Deudas activas */}
-      {debts.length > 0 && (
-        <div>
-          <h3 style={{ marginBottom: 10 }}>Deudas activas</h3>
-          <div className="stack">
-            {debts.map(d => (
-              <div key={d.id} className="debt-card">
-                <div className="debt-header">
-                  <div>
-                    <div className="debt-name">{d.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--red)', marginTop: 2 }}>
-                      Debes a {d.counterpart}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="amount amount-expense" style={{ fontSize: '0.9rem' }}>
-                      {fmt(d.remaining)}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text3)' }}>
-                      de {fmt(d.total_amount)}
-                    </div>
-                  </div>
-                </div>
-                <div className="progress-bar">
-                  <div className="progress-fill"
-                    style={{ width: `${d.progress_pct || 0}%`, background: 'var(--red)' }} />
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text3)', marginTop: 4 }}>
-                  {d.progress_pct || 0}% pagado
-                  {d.due_date && ` · vence ${new Date(d.due_date).toLocaleDateString('es-CO')}`}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}

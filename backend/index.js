@@ -15,7 +15,6 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/accounts', require('./routes/accounts'));
 app.use('/api/transactions', require('./routes/transactions'));
-app.use('/api/debts', require('./routes/debts'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/fixed-expenses', require('./routes/fixed-expenses'));
 app.use('/api/budgets', require('./routes/budgets'));

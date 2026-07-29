@@ -258,10 +258,6 @@ export default function BudgetPage() {
           </div>
         </div>
         <div className="card">
-          <div className="summary-label">Deudas pendientes</div>
-          <div className="amount amount-expense" style={{ fontSize: '1.1rem' }}>{fmt(cards.deudas_pendientes)}</div>
-        </div>
-        <div className="card">
           <div className="summary-label">Pagos pendientes</div>
           <div className="amount" style={{ fontSize: '1.1rem', color: 'var(--yellow)' }}>{fmt(cards.pagos_pendientes)}</div>
         </div>
