@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
+import { todayStr } from './helpers.jsx';
 
 const TYPES = [
   { key: 'expense',  label: '↓ Gasto' },
@@ -13,7 +14,7 @@ export default function AddTransactionModal({ onClose, onSaved, transaction }) {
   const [type, setType]               = useState(transaction?.type || 'expense');
   const [amount, setAmount]           = useState(transaction?.amount ? String(transaction.amount) : '');
   const [description, setDescription] = useState(transaction?.description || '');
-  const [date, setDate]               = useState(transaction?.date || new Date().toISOString().split('T')[0]);
+  const [date, setDate]               = useState(transaction?.date || todayStr());
   const [accountId, setAccountId]     = useState(transaction?.account_id ? String(transaction.account_id) : '');
   const [toAccountId, setToAccountId] = useState(transaction?.transfer_to_account_id ? String(transaction.transfer_to_account_id) : '');
   const [categoryId, setCategoryId]   = useState(transaction?.category_id ? String(transaction.category_id) : '');

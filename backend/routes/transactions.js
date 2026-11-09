@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db/pool');
 const auth = require('../middleware/auth');
+const { today } = require('../utils/dates');
 const router = express.Router();
 
 // GET /api/transactions — personales filtradas
@@ -110,7 +111,7 @@ router.post('/', auth, async (req, res) => {
     const result = await client.query(
       `INSERT INTO transactions (amount, type, description, date, account_id, category_id, transfer_to_account_id, created_by, notes)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [amount, type, description, date || new Date().toISOString().split('T')[0],
+      [amount, type, description, date || today(),
        account_id, category_id, transfer_to_account_id, req.user.id, notes]
     );
 

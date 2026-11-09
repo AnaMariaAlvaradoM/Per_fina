@@ -30,16 +30,35 @@ export const fmt = (n) => {
   return `${num < 0 ? '-' : ''}$\u00a0${formatted}`;
 };
 
-// ── Format date ──
+// ── Fechas ──
+// Las fechas llegan del backend como 'YYYY-MM-DD' y se leen en hora local.
+// new Date('2026-11-09') las tomaría como UTC y en Colombia mostraría el día anterior.
+export const parseDate = (d) => {
+  const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, day);
+};
+
+const pad = (n) => String(n).padStart(2, '0');
+
+// 'YYYY-MM-DD' de hoy según el reloj del dispositivo
+export const todayStr = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
+};
+
 export const fmtDate = (d) =>
-  new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+  parseDate(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+
+// Fecha corta sin año: "9 nov"
+export const fmtDay = (d) =>
+  parseDate(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '');
 
 // ── Relative date ──
 export const fmtRelative = (d) => {
-  const diff = Math.floor((Date.now() - new Date(d)) / 86400000);
+  const diff = Math.round((parseDate(todayStr()) - parseDate(d)) / 86400000);
   if (diff === 0) return 'Hoy';
   if (diff === 1) return 'Ayer';
-  if (diff < 7) return `Hace ${diff} días`;
+  if (diff > 1 && diff < 7) return `Hace ${diff} días`;
   return fmtDate(d);
 };
 
