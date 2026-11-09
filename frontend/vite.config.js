@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: 'FinanzApp',
         short_name: 'FinanzApp',
-        description: 'Controla tus finanzas personales y de hogar',
+        description: 'Controla tus finanzas personales',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

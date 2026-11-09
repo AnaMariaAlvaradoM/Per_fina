@@ -1,6 +1,6 @@
 # 💸 FinanzApp
 
-App de finanzas personales y de hogar. PWA instalable en celular y PC.
+App de finanzas personales. PWA instalable en celular y PC.
 
 ---
 
@@ -9,7 +9,6 @@ App de finanzas personales y de hogar. PWA instalable en celular y PC.
 - **Frontend:** React + Vite + PWA (instalable)
 - **Backend:** Node.js + Express
 - **DB:** PostgreSQL
-- **IA:** Claude API (contexto financiero real)
 - **Deploy:** Render
 
 ---
@@ -49,7 +48,6 @@ Crea un repo en GitHub y sube todo el proyecto.
    DATABASE_URL    → (Internal Database URL del paso 2)
    JWT_SECRET      → (cualquier string largo y aleatorio)
    FRONTEND_URL    → (URL del frontend, la agregas después)
-   ANTHROPIC_API_KEY → sk-ant-...
    NODE_ENV        → production
    ```
 7. Deploy → copia la URL del backend (ej: `https://finanzapp-api.onrender.com`)
@@ -96,13 +94,12 @@ npm run dev
 ## Funcionalidades
 
 - ✅ Login / registro con JWT
-- ✅ Múltiples cuentas (personal + compartidas)
-- ✅ Ingresos, gastos, transferencias, pagos de deuda
-- ✅ Categorías fijas + personalizadas
-- ✅ Tracker de deudas con progreso
-- ✅ Dashboard con gráficas (dona + barras)
-- ✅ Hogar compartido con código de invitación
-- ✅ Chat IA con contexto financiero real
+- ✅ Múltiples cuentas con saldo calculado desde los movimientos
+- ✅ Ingresos, gastos y transferencias entre cuentas
+- ✅ Categorías por defecto
+- ✅ Dashboard con gráfica de gastos por categoría
+- ✅ Gastos fijos mensuales
+- ✅ Exportación de movimientos a Excel
 - ✅ PWA instalable (Android, iOS, PC)
 - ✅ Diseño dark mobile-first
 
