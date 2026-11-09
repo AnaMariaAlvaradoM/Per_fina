@@ -48,7 +48,7 @@ export const api = {
   createCategory: (body) => req('POST', '/categories', body),
 
   // Gastos fijos
-  getFixed:      ()         => req('GET',    '/fixed-expenses'),
+  getFixed:      (month)    => req('GET',    `/fixed-expenses${month ? `?month=${month}` : ''}`),
   createFixed:   (body)     => req('POST',   '/fixed-expenses', body),
   updateFixed:   (id, body) => req('PUT',    `/fixed-expenses/${id}`, body),
   deleteFixed:   (id)       => req('DELETE', `/fixed-expenses/${id}`),

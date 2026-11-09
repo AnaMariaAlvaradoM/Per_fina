@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { fmt, fmtDate } from '../components/ui/helpers.jsx';
 import AddTransactionModal from '../components/ui/AddTransactionModal';
+import { IconPencil, IconTrash } from '../components/ui/icons.jsx';
 import * as XLSX from 'xlsx';
 
 export default function TransactionsPage({ onAdd }) {
@@ -188,55 +189,51 @@ export default function TransactionsPage({ onAdd }) {
                       {t.category_icon || (t.type === 'income' ? '↑' : t.type === 'transfer' ? '⇄' : '↓')}
                     </div>
                     <div className="tx-info">
-                      <div className="tx-desc">{t.description || t.category_name || t.type}</div>
+                      <div className="tx-title">
+                        <span className="tx-desc">{t.description || t.category_name || t.type}</span>
+                        {t.fixed_expense_id && <span className="tx-tag">Fijo</span>}
+                      </div>
                       <div className="tx-meta">
                         {t.account_name}
                         {t.category_name && ` · ${t.category_name}`}
-                        {' · '}{fmtDate(t.date)}
                       </div>
                     </div>
 
-                    <div className={`tx-amount ${
-                      t.type === 'income' ? 'amount-income'
-                      : t.type === 'transfer' ? 'amount-neutral'
-                      : 'amount-expense'
-                    }`}>
-                      {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{fmt(t.amount)}
-                    </div>
+                    <div className="tx-side">
+                      <div className={`tx-amount ${
+                        t.type === 'income' ? 'amount-income'
+                        : t.type === 'transfer' ? 'amount-neutral'
+                        : 'amount-expense'
+                      }`}>
+                        {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{fmt(t.amount)}
+                      </div>
 
-                    {confirmId === t.id ? (
-                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                        <button onClick={() => del(t.id)} disabled={deleting === t.id}
-                          style={{ background: 'var(--red-dim)', color: 'var(--red)', border: 'none',
-                            borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
-                            fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font)' }}>
-                          {deleting === t.id ? '...' : 'Sí'}
-                        </button>
-                        <button onClick={() => setConfirmId(null)}
-                          style={{ background: 'var(--bg3)', color: 'var(--text2)', border: 'none',
-                            borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
-                            fontSize: '0.75rem', fontFamily: 'var(--font)' }}>
-                          No
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-                        <button onClick={() => setEditing(t)}
-                          style={{ background: 'none', border: 'none', color: 'var(--text3)',
-                            cursor: 'pointer', fontSize: '0.95rem', padding: '4px 6px',
-                            borderRadius: 6 }}
-                          title="Editar">
-                          ✏️
-                        </button>
-                        <button onClick={() => setConfirmId(t.id)}
-                          style={{ background: 'none', border: 'none', color: 'var(--text3)',
-                            cursor: 'pointer', fontSize: '0.95rem', padding: '4px 6px',
-                            borderRadius: 6 }}
-                          title="Eliminar">
-                          🗑
-                        </button>
-                      </div>
-                    )}
+                      {confirmId === t.id ? (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button onClick={() => del(t.id)} disabled={deleting === t.id}
+                            style={{ background: 'var(--red-dim)', color: 'var(--red)', border: 'none',
+                              borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                              fontSize: '0.75rem', fontWeight: 700, fontFamily: 'var(--font)' }}>
+                            {deleting === t.id ? '...' : 'Sí'}
+                          </button>
+                          <button onClick={() => setConfirmId(null)}
+                            style={{ background: 'var(--bg3)', color: 'var(--text2)', border: 'none',
+                              borderRadius: 6, padding: '4px 8px', cursor: 'pointer',
+                              fontSize: '0.75rem', fontFamily: 'var(--font)' }}>
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex' }}>
+                          <button className="tx-action" onClick={() => setEditing(t)} aria-label="Editar">
+                            <IconPencil size={16} />
+                          </button>
+                          <button className="tx-action" onClick={() => setConfirmId(t.id)} aria-label="Eliminar">
+                            <IconTrash size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

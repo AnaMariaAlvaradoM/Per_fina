@@ -1,20 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { IconHome, IconSwap, IconWallet, IconCalendarCheck } from '../ui/icons.jsx';
 
-const NAV_MOBILE = [
-  { path: '/',             icon: '⬡',  label: 'Inicio' },
-  { path: '/transactions', icon: '↕',  label: 'Movimientos' },
-  null,
-  { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
-  { path: '/fixed',        icon: '📋', label: 'Fijos' },
+const NAV = [
+  { path: '/',             Icon: IconHome,          label: 'Inicio' },
+  { path: '/transactions', Icon: IconSwap,          label: 'Movimientos' },
+  { path: '/accounts',     Icon: IconWallet,        label: 'Cuentas' },
+  { path: '/fixed',        Icon: IconCalendarCheck, label: 'Fijos' },
 ];
 
-const NAV_SIDEBAR = [
-  { path: '/',             icon: '⬡',  label: 'Inicio' },
-  { path: '/transactions', icon: '↕',  label: 'Movimientos' },
-  { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
-  { path: '/fixed',        icon: '📋', label: 'Fijos' },
-];
+// En el celular el botón "+" va en el centro (null marca su posición)
+const NAV_MOBILE = [NAV[0], NAV[1], null, NAV[2], NAV[3]];
 
 export default function Layout({ children, onAdd }) {
   const { pathname } = useLocation();
@@ -30,10 +26,10 @@ export default function Layout({ children, onAdd }) {
           <span>💸</span> FinanzApp
         </div>
 
-        {NAV_SIDEBAR.map(n => (
+        {NAV.map(n => (
           <button key={n.path} className={`sidebar-link ${active(n.path)}`}
             onClick={() => navigate(n.path)}>
-            <span className="sidebar-icon">{n.icon}</span>
+            <span className="sidebar-icon"><n.Icon size={20} /></span>
             {n.label}
           </button>
         ))}
@@ -67,7 +63,7 @@ export default function Layout({ children, onAdd }) {
           ) : (
             <button key={n.path} className={`bottom-nav-item ${active(n.path)}`}
               onClick={() => navigate(n.path)}>
-              <span className="nav-icon">{n.icon}</span>
+              <span className="nav-icon"><n.Icon size={23} /></span>
               {n.label}
             </button>
           )
