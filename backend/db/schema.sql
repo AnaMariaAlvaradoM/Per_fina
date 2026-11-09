@@ -203,25 +203,3 @@ INSERT INTO categories (name, icon, color, type, is_default, group_key) VALUES
   ('Regalos',              '🎁', '#db2777', 'expense', true, 'personales'),
   ('Viajes',                '✈️', '#06b6d4', 'expense', true, 'personales')
 ON CONFLICT (name, type) WHERE is_default = true DO NOTHING;
-
--- Presupuesto mensual (un registro por usuario por mes, siempre día 1)
-CREATE TABLE IF NOT EXISTS budgets (
-  id SERIAL PRIMARY KEY,
-  owner_id INTEGER REFERENCES users(id) NOT NULL,
-  month DATE NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(owner_id, month)
-);
-
--- Monto asignado por categoría dentro de un presupuesto mensual
-CREATE TABLE IF NOT EXISTS budget_items (
-  id SERIAL PRIMARY KEY,
-  budget_id INTEGER REFERENCES budgets(id) ON DELETE CASCADE,
-  category_id INTEGER REFERENCES categories(id),
-  amount_assigned DECIMAL(15,2) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(budget_id, category_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_budgets_owner_month ON budgets(owner_id, month);
-CREATE INDEX IF NOT EXISTS idx_budget_items_budget ON budget_items(budget_id);

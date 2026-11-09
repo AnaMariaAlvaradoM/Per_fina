@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 
 const NAV_MOBILE = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
-  { path: '/budget',       icon: '🎯', label: 'Presupuesto' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
   null,
   { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
@@ -12,7 +11,6 @@ const NAV_MOBILE = [
 
 const NAV_SIDEBAR = [
   { path: '/',             icon: '⬡',  label: 'Inicio' },
-  { path: '/budget',       icon: '🎯', label: 'Presupuesto' },
   { path: '/transactions', icon: '↕',  label: 'Movimientos' },
   { path: '/accounts',     icon: '🏦', label: 'Cuentas' },
   { path: '/fixed',        icon: '📋', label: 'Fijos' },
