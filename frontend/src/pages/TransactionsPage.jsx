@@ -85,7 +85,7 @@ export default function TransactionsPage({ onAdd }) {
 
         const filas = [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto', 'Cuenta', 'Notas']];
         txs.forEach(t => {
-          const TIPOS = { income: 'Ingreso', expense: 'Gasto', transfer: 'Transferencia' };
+          const TIPOS = { income: 'Ingreso', expense: 'Gasto', transfer: 'Transferencia', adjustment: 'Ajuste de saldo' };
           filas.push([
             t.date,
             t.description || '',
@@ -186,7 +186,7 @@ export default function TransactionsPage({ onAdd }) {
                   <div className="tx-item">
                     <div className="tx-icon"
                       style={{ background: `${t.category_color || '#6366f1'}22`, flexShrink: 0 }}>
-                      {t.category_icon || (t.type === 'income' ? '↑' : t.type === 'transfer' ? '⇄' : '↓')}
+                      {t.category_icon || (t.type === 'income' ? '↑' : t.type === 'transfer' ? '⇄' : t.type === 'adjustment' ? '⚖' : '↓')}
                     </div>
                     <div className="tx-info">
                       <div className="tx-title">
@@ -202,10 +202,13 @@ export default function TransactionsPage({ onAdd }) {
                     <div className="tx-side">
                       <div className={`tx-amount ${
                         t.type === 'income' ? 'amount-income'
-                        : t.type === 'transfer' ? 'amount-neutral'
+                        : t.type === 'transfer' || t.type === 'adjustment' ? 'amount-neutral'
                         : 'amount-expense'
                       }`}>
-                        {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{fmt(t.amount)}
+                        {t.type === 'income' ? '+'
+                          : t.type === 'transfer' ? ''
+                          : t.type === 'adjustment' ? (Number(t.amount) >= 0 ? '+' : '-')
+                          : '-'}{fmt(Math.abs(Number(t.amount)))}
                       </div>
 
                       {confirmId === t.id ? (
@@ -225,9 +228,11 @@ export default function TransactionsPage({ onAdd }) {
                         </div>
                       ) : (
                         <div style={{ display: 'flex' }}>
-                          <button className="tx-action" onClick={() => setEditing(t)} aria-label="Editar">
-                            <IconPencil size={16} />
-                          </button>
+                          {t.type !== 'adjustment' && (
+                            <button className="tx-action" onClick={() => setEditing(t)} aria-label="Editar">
+                              <IconPencil size={16} />
+                            </button>
+                          )}
                           <button className="tx-action" onClick={() => setConfirmId(t.id)} aria-label="Eliminar">
                             <IconTrash size={16} />
                           </button>

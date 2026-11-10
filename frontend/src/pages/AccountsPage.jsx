@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import { fmt, ACCOUNT_ICONS, ACCOUNT_LABELS } from '../components/ui/helpers.jsx';
+import { fmt, ACCOUNT_ICONS, ACCOUNT_LABELS, useToast, ToastContainer } from '../components/ui/helpers.jsx';
 
 const COLORS = ['#6366f1','#10b981','#f59e0b','#f43f5e','#3b82f6','#8b5cf6','#06b6d4','#ec4899'];
 
@@ -13,25 +13,36 @@ export default function AccountsPage() {
   const [error, setError] = useState('');
   const [editingAccount, setEditingAccount] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [editError, setEditError] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const { toasts, show } = useToast();
 
   const load = () => api.getAccounts().then(setAccounts).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
   const saveEdit = async () => {
+    if (!editForm.name?.trim()) { setEditError('Ingresa el nombre'); return; }
     setEditSaving(true);
+    setEditError('');
     try {
       await api.updateAccount(editingAccount.id, {
-        name: editForm.name,
+        name: editForm.name.trim(),
         color: editForm.color,
         icon: editForm.icon,
-        balance: parseFloat(editForm.balance) || 0,
         is_active: true,
       });
-      load();
+      const newBalance = Number(editForm.balance) || 0;
+      const oldBalance = Math.round(Number(editingAccount.balance));
+      let msg = 'Cuenta actualizada';
+      if (newBalance !== oldBalance) {
+        const r = await api.setAccountBalance(editingAccount.id, newBalance);
+        if (r.adjustment) msg = `Ajuste de ${fmt(r.adjustment.amount)} registrado en Movimientos`;
+      }
+      await load();
       setEditingAccount(null);
+      show(msg);
     } catch (e) {
-      alert('Error: ' + e.message);
+      setEditError(e.message);
     } finally {
       setEditSaving(false);
     }
@@ -43,7 +54,7 @@ export default function AccountsPage() {
     try {
       await api.createAccount({
         ...form,
-        balance: parseFloat(form.balance) || 0,
+        balance: Number(form.balance) || 0,
       });
       setShowForm(false);
       setForm({ name: '', type: 'checking', balance: '', color: COLORS[0], icon: '🏦' });
@@ -60,6 +71,7 @@ export default function AccountsPage() {
 
   return (
     <div className="stack">
+      <ToastContainer toasts={toasts} />
       <div className="flex-between page-header">
         <div>
           <div className="page-title">Cuentas</div>
@@ -78,7 +90,8 @@ export default function AccountsPage() {
               account={a}
               onEdit={() => {
                 setEditingAccount(a);
-                setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: a.balance });
+                setEditError('');
+                setEditForm({ name: a.name, color: a.color, icon: a.icon, balance: String(Math.round(Number(a.balance))) });
               }}
             />
           ))}
@@ -122,8 +135,9 @@ export default function AccountsPage() {
                 </div>
                 <div className="field">
                   <label>Saldo inicial</label>
-                  <input className="input" type="number" placeholder="0"
-                    value={form.balance} onChange={e => setForm(f => ({ ...f, balance: e.target.value }))} />
+                  <input className="input" type="text" inputMode="numeric" placeholder="0"
+                    value={form.balance ? Number(form.balance).toLocaleString('es-CO') : ''}
+                    onChange={e => setForm(f => ({ ...f, balance: e.target.value.replace(/[^0-9]/g, '') }))} />
                 </div>
               </div>
               <div className="field">
@@ -171,18 +185,16 @@ export default function AccountsPage() {
                     type="text"
                     inputMode="numeric"
                     placeholder="0"
-                    value={editForm.balance !== '' && editForm.balance != null
-                      ? Number(String(editForm.balance).replace(/\./g, '').replace(/[^0-9]/g, '') || 0).toLocaleString('es-CO')
-                      : ''}
+                    value={editForm.balance ? Number(editForm.balance).toLocaleString('es-CO') : ''}
                     onChange={e => {
-                      const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                      const raw = e.target.value.replace(/[^0-9-]/g, '');
                       setEditForm(f => ({ ...f, balance: raw }));
                     }}
                     style={{ paddingLeft: 28 }}
                   />
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text3)' }}>
-                  Ajusta el saldo directamente para corregir valores incorrectos
+                <span style={{ fontSize: '0.75rem', color: 'var(--text2)', lineHeight: 1.4 }}>
+                  Si cambias el saldo, la diferencia queda registrada en Movimientos como "Ajuste de saldo".
                 </span>
               </div>
               <div className="field">
@@ -195,6 +207,7 @@ export default function AccountsPage() {
                   ))}
                 </div>
               </div>
+              {editError && <div className="field-error">⚠ {editError}</div>}
               <button className="btn btn-primary btn-full" onClick={saveEdit} disabled={editSaving}>
                 {editSaving ? 'Guardando...' : 'Guardar cambios'}
               </button>

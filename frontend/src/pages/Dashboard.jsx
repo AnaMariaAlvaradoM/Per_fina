@@ -154,14 +154,20 @@ export default function Dashboard({ onAdd }) {
               <div key={t.id} className="tx-item">
                 <div className="tx-icon"
                   style={{ background: `${t.category_color || 'var(--accent)'}22` }}>
-                  {t.category_icon || (t.type === 'income' ? '↑' : '↓')}
+                  {t.category_icon || (t.type === 'income' ? '↑' : t.type === 'transfer' ? '⇄' : t.type === 'adjustment' ? '⚖' : '↓')}
                 </div>
                 <div className="tx-info">
                   <div className="tx-desc">{t.description || t.category_name || t.type}</div>
                   <div className="tx-meta">{t.account_name} · {fmtRelative(t.date)}</div>
                 </div>
-                <div className={`tx-amount ${t.type === 'income' ? 'amount-income' : 'amount-expense'}`}>
-                  {t.type === 'income' ? '+' : '-'}{fmt(t.amount)}
+                <div className={`tx-amount ${
+                  t.type === 'income' ? 'amount-income'
+                  : t.type === 'transfer' || t.type === 'adjustment' ? 'amount-neutral'
+                  : 'amount-expense'}`}>
+                  {t.type === 'income' ? '+'
+                    : t.type === 'transfer' ? ''
+                    : t.type === 'adjustment' ? (Number(t.amount) >= 0 ? '+' : '-')
+                    : '-'}{fmt(Math.abs(Number(t.amount)))}
                 </div>
               </div>
             ))}

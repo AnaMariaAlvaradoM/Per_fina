@@ -28,6 +28,7 @@ export const api = {
   getAccounts:    ()         => req('GET',    '/accounts'),
   createAccount:  (body)     => req('POST',   '/accounts', body),
   updateAccount:  (id, body) => req('PUT',    `/accounts/${id}`, body),
+  setAccountBalance: (id, balance) => req('PUT', `/accounts/${id}/balance`, { balance }),
   deleteAccount:  (id)       => req('DELETE', `/accounts/${id}`),
 
   // Transactions

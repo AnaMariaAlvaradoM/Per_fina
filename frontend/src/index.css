@@ -275,7 +275,7 @@ h3 { font-size: 1rem; font-weight: 600; }
 .account-card::before {
   content: ''; position: absolute; top: -30px; right: -30px;
   width: 90px; height: 90px; border-radius: 50%;
-  background: currentColor; opacity: 0.07;
+  background: currentColor; opacity: 0.07; pointer-events: none;
 }
 
 /* ── Tx item ── */
