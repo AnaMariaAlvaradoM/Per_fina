@@ -47,56 +47,33 @@ CREATE UNIQUE INDEX IF NOT EXISTS categories_default_unique
 
 -- Categorías por defecto
 INSERT INTO categories (name, icon, color, type, is_default) VALUES
-  ('Comida', '🍔', '#f97316', 'expense', true),
-  ('Transporte', '🚌', '#3b82f6', 'expense', true),
-  ('Servicios', '💡', '#eab308', 'expense', true),
-  ('Salud', '🏥', '#ef4444', 'expense', true),
-  ('Educación', '📚', '#8b5cf6', 'expense', true),
-  ('Ropa', '👗', '#ec4899', 'expense', true),
-  ('Entretenimiento', '🎮', '#06b6d4', 'expense', true),
-  ('Mascota', '🐾', '#84cc16', 'expense', true),
-  ('Hogar', '🏠', '#f59e0b', 'expense', true),
-  ('Ahorro', '💰', '#10b981', 'both', true),
-  ('Sueldo', '💼', '#10b981', 'income', true),
-  ('Freelance', '💻', '#6366f1', 'income', true),
-  ('Otros ingresos', '➕', '#14b8a6', 'income', true),
-  ('Deuda', '💳', '#ef4444', 'expense', true),
-  ('Otros gastos', '📦', '#94a3b8', 'expense', true),
-  -- Básicos
-  ('Arriendo',            '🏘️', '#3b82f6', 'expense', true),
+  -- Gastos del día a día
   ('Mercado',             '🛒', '#f97316', 'expense', true),
-  ('Internet',            '📶', '#0ea5e9', 'expense', true),
-  ('Celular',             '📱', '#0ea5e9', 'expense', true),
-  ('Gasolina',            '⛽', '#eab308', 'expense', true),
-  ('Seguros',             '🛡️', '#64748b', 'expense', true),
-  -- Deudas
-  ('Tarjeta de crédito',  '💳', '#ef4444', 'expense', true),
-  ('RappiCard',           '🛵', '#f97316', 'expense', true),
-  ('ADDI',                '🏷️', '#ef4444', 'expense', true),
-  ('Nequi (crédito)',     '🟣', '#a855f7', 'expense', true),
-  ('Caja Social',         '🏦', '#ef4444', 'expense', true),
-  ('Crédito vehículo',    '🚗', '#ef4444', 'expense', true),
-  ('Otros préstamos',     '🧾', '#ef4444', 'expense', true),
-  -- Trabajo
-  ('ChatGPT',             '🤖', '#8b5cf6', 'expense', true),
-  ('Claude',              '✨', '#8b5cf6', 'expense', true),
-  ('Software',            '🧩', '#7c3aed', 'expense', true),
-  ('Dominio',             '🌐', '#7c3aed', 'expense', true),
-  ('Hosting',             '🖥️', '#7c3aed', 'expense', true),
-  ('Cursos',              '🎓', '#8b5cf6', 'expense', true),
-  -- Ahorro e inversión
-  ('Fondo de emergencia', '🆘', '#10b981', 'expense', true),
-  ('Ahorro vehículo',     '🚙', '#10b981', 'expense', true),
-  ('Ahorro vivienda',     '🏡', '#10b981', 'expense', true),
-  ('Inversiones',         '📈', '#059669', 'expense', true),
-  ('Cesantías',           '🧾', '#059669', 'expense', true),
-  -- Gastos personales
   ('Restaurantes',        '🍽️', '#ec4899', 'expense', true),
-  ('Salidas',             '🎉', '#ec4899', 'expense', true),
-  ('Compras personales',  '🛍️', '#db2777', 'expense', true),
-  ('Streaming',           '📺', '#06b6d4', 'expense', true),
-  ('Regalos',             '🎁', '#db2777', 'expense', true),
-  ('Viajes',              '✈️', '#06b6d4', 'expense', true)
+  ('Salidas',             '🎉', '#db2777', 'expense', true),
+  ('Gasolina',            '⛽', '#eab308', 'expense', true),
+  ('Perritas',            '🐾', '#84cc16', 'expense', true),
+  ('Extras',              '📦', '#94a3b8', 'expense', true),
+  -- Pagos del mes
+  ('Arriendo',            '🏘️', '#3b82f6', 'expense', true),
+  ('Servicios',           '💡', '#f59e0b', 'expense', true),
+  ('Internet',            '📶', '#0ea5e9', 'expense', true),
+  ('Plan celular',        '📱', '#06b6d4', 'expense', true),
+  ('Salud',               '🏥', '#ef4444', 'expense', true),
+  ('Seguro carro',        '🚗', '#64748b', 'expense', true),
+  ('Educación',           '📚', '#8b5cf6', 'expense', true),
+  -- Tarjetas y créditos (se registra el pago mensual)
+  ('Tarjeta Bancolombia', '💳', '#f43f5e', 'expense', true),
+  ('Tarjeta Rappi',       '🛵', '#fb923c', 'expense', true),
+  ('Tarjeta Nu',          '💜', '#a855f7', 'expense', true),
+  ('Crédito Nequi',       '🟣', '#7c3aed', 'expense', true),
+  ('Crédito ADDI',        '🏷️', '#e11d48', 'expense', true),
+  ('Otros créditos',      '🧾', '#9f1239', 'expense', true),
+  -- Ahorro e ingresos
+  ('Ahorro',              '💰', '#10b981', 'both',    true),
+  ('Sueldo',              '💼', '#10b981', 'income',  true),
+  ('Freelance',           '💻', '#6366f1', 'income',  true),
+  ('Otros ingresos',      '➕', '#14b8a6', 'income',  true)
 ON CONFLICT (name, type) WHERE is_default = true DO NOTHING;
 
 -- Transacciones
